@@ -76,7 +76,8 @@ docs/                    Specs and reference images (not shipped)
 - **Platform code stays in `src/platform/`.** Don't call any portal SDK from gameplay code,
   and don't invent SDK method names — use the official Poki documentation when integrating.
 - **Patterns are timed in seconds of travel** (`src/game/Patterns.ts`), so fairness holds at any
-  speed. Obstacles that must be jumped stay ≥ 1.3 s apart; leave ≥ 1.5 s after a crate. Food arcs
+  speed. The Spawner enforces obstacle spacing across patterns (`spawner.minObstacleGap`,
+  `afterCrateGap`) and fills open water with a corn trail, planning ~3 s ahead so nothing pops in. Food arcs
   use the simulated jump, so they always match the real trajectory. Food can rest only on crates
   (`lid`, collected by smashing); above logs/rocks use `crown` at jump height.
 - **Pool, don't allocate**, in per-frame code (obstacles, particles, effects).

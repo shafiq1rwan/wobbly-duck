@@ -142,10 +142,19 @@ interface Scheduled {
   entry: Entry;
 }
 
+/** How far ahead (seconds of travel) patterns are planned. */
+const LOOKAHEAD = 3;
+
 export class Spawner {
   active = false;
   private queue: Scheduled[] = [];
+  /** World distance where the next pattern starts (before the fairness shift). */
   private nextPatternAt = 0;
+  /** World distance where the previous pattern ended (start of the open water to fill). */
+  private prevEnd = 0;
+  /** Last scheduled obstacle that must be cleared, for cross-pattern fairness. */
+  private lastObstacleAt = -Infinity;
+  private lastObstacleType: ObstacleType | null = null;
   private last: Pattern | null = null;
   /** Run distance (m) after which the next lost duckling may appear. */
   private nextDucklingMetres = 0;
@@ -153,6 +162,9 @@ export class Spawner {
   reset(distance: number): void {
     this.queue.length = 0;
     this.nextPatternAt = distance + CONFIG.spawner.firstPatternDistance;
+    this.prevEnd = distance + 250; // a corn trail leads into the first pattern
+    this.lastObstacleAt = -Infinity;
+    this.lastObstacleType = null;
     this.last = null;
     this.nextDucklingMetres = CONFIG.ducklings.firstAtMetres;
   }
@@ -163,7 +175,7 @@ export class Spawner {
   }
 
   /**
-   * Schedules the next pattern when due and hands out entries whose time has come.
+   * Plans patterns a few seconds ahead and hands out entries whose time has come.
    * `spawn` receives how far (world units) the entry is overdue so it can be placed exactly.
    * `wantDuckling` is false while the parade is full.
    */
@@ -174,7 +186,9 @@ export class Spawner {
     wantDuckling: boolean,
     spawn: (entry: Entry, overdue: number) => void,
   ): void {
-    if (this.active && distance >= this.nextPatternAt) this.schedule(metres, speed, wantDuckling);
+    // Plan ahead so filler trails and shifted patterns are queued before they reach the screen edge.
+    const lookahead = LOOKAHEAD * speed;
+    while (this.active && distance >= this.nextPatternAt - lookahead) this.schedule(metres, speed, wantDuckling);
     while (this.queue.length && this.queue[0].at <= distance) {
       const s = this.queue.shift()!;
       spawn(s.entry, distance - s.at);
@@ -182,7 +196,8 @@ export class Spawner {
   }
 
   private schedule(metres: number, speed: number, wantDuckling: boolean): void {
-    const tiers = CONFIG.spawner.tiers;
+    const cfg = CONFIG.spawner;
+    const tiers = cfg.tiers;
     let tier = 0;
     for (let i = 0; i < tiers.length; i++) if (metres >= tiers[i].fromMetres) tier = i;
 
@@ -200,16 +215,57 @@ export class Spawner {
     }
     this.last = picked;
 
-    for (const entry of picked.entries) this.queue.push({ at: this.nextPatternAt + entry.t * speed, entry });
+    // Fairness across patterns: the first obstacle must come far enough after the previous one.
+    const obstacles = picked.entries.filter((e) => e.obstacle);
+    let start = this.nextPatternAt;
+    if (obstacles.length) {
+      const need = (this.lastObstacleType === 'crate' ? cfg.afterCrateGap : cfg.minObstacleGap) * speed;
+      start = Math.max(start, this.lastObstacleAt + need - obstacles[0].t * speed);
+    }
+
+    // Fill the open water between the previous pattern and this one.
+    this.fillGap(this.prevEnd, start, obstacles.length ? start + obstacles[0].t * speed : Infinity, metres, speed, wantDuckling);
+
+    for (const entry of picked.entries) this.queue.push({ at: start + entry.t * speed, entry });
+    if (obstacles.length) {
+      const lastObstacle = obstacles[obstacles.length - 1];
+      this.lastObstacleAt = start + lastObstacle.t * speed;
+      this.lastObstacleType = lastObstacle.obstacle!;
+    }
     this.queue.sort((a, b) => a.at - b.at);
+
     const gap = Phaser.Math.FloatBetween(tiers[tier].gapMin, tiers[tier].gapMax);
-    // Lost ducklings sit in the middle of the gap after a pattern: ≥ 0.6 s of open water either side.
-    if (wantDuckling && metres >= this.nextDucklingMetres) {
-      this.queue.push({ at: this.nextPatternAt + (picked.length + gap / 2) * speed, entry: { t: 0, duckling: true } });
-      this.queue.sort((a, b) => a.at - b.at);
+    this.prevEnd = start + picked.length * speed;
+    this.nextPatternAt = this.prevEnd + gap * speed;
+  }
+
+  /**
+   * Corn trail (and maybe a lost duckling) in the open water [from, to). Food keeps `clearance`
+   * from the previous obstacle and the next pattern; the duckling sits in the middle of the free
+   * water, at least 0.25 s from any obstacle.
+   */
+  private fillGap(from: number, to: number, nextObstacleAt: number, metres: number, speed: number, wantDuckling: boolean): void {
+    const trail = CONFIG.spawner.trail;
+    const clearance = trail.clearance * speed;
+    const start = Math.max(from, this.lastObstacleAt + clearance);
+    const end = to - clearance;
+    if (end <= start) return;
+
+    let ducklingAt = -Infinity;
+    const freeStart = Math.max(from, this.lastObstacleAt + 0.25 * speed);
+    const freeEnd = Math.min(to, nextObstacleAt - 0.25 * speed);
+    if (wantDuckling && metres >= this.nextDucklingMetres && freeEnd - freeStart >= 0.5 * speed) {
+      ducklingAt = (freeStart + freeEnd) / 2;
+      this.queue.push({ at: ducklingAt, entry: { t: 0, duckling: true } });
       const d = CONFIG.ducklings;
       this.nextDucklingMetres = metres + Phaser.Math.FloatBetween(d.everyMin, d.everyMax);
     }
-    this.nextPatternAt += (picked.length + gap) * speed;
+
+    const step = trail.step * speed;
+    for (let at = start; at <= end; at += step) {
+      if (Math.abs(at - ducklingAt) < 0.22 * speed) continue; // leave room around the duckling
+      const food: FoodKind = Math.random() < trail.peasChance ? 'peas' : 'corn';
+      this.queue.push({ at, entry: { t: 0, food } });
+    }
   }
 }

@@ -47,6 +47,7 @@ export class UI {
   private lastDistance = -1;
   private lastScore = -1;
   private toastTimer = 0;
+  private paradeCount = 0;
 
   constructor(handlers: UIHandlers) {
     const bind = (id: string, fn: () => void) => {
@@ -82,6 +83,10 @@ export class UI {
         }, ACTION_DELAY_MS);
       });
     };
+    this.paradeChip.addEventListener('animationend', () => {
+      this.paradeChip.classList.remove('pop', 'shake');
+      this.paradeChip.hidden = this.paradeCount === 0;
+    });
     bind('btn-play', handlers.onPlay);
     bind('btn-pause', handlers.onPause);
     bind('btn-resume', handlers.onResume);
@@ -137,18 +142,18 @@ export class UI {
     if (up) restartAnimation(this.scoreEl, 'bump');
   }
 
-  /** Parade chip: ×(1 + ducklings). Pops on join, shakes on loss, hidden with an empty parade. */
+  /** Parade chip: ×(1 + ducklings). Pops on join, shakes red on loss, hidden with an empty parade. */
   setParade(count: number, event: 'join' | 'lost' | 'reset'): void {
+    this.paradeCount = count;
     $('hud-mult').textContent = String(1 + count);
     const chip = this.paradeChip;
-    if (event === 'reset' || (count === 0 && event !== 'lost')) {
+    if (event === 'reset') {
+      chip.classList.remove('pop', 'shake');
       chip.hidden = true;
       return;
     }
     chip.hidden = false;
     restartAnimation(chip, event === 'join' ? 'pop' : 'shake');
-    // Keep the chip briefly after losing the last duckling so the shake is visible.
-    if (count === 0) setTimeout(() => (chip.hidden = $('hud-mult').textContent === '1'), 600);
   }
 
   /** A short message under the score (e.g. the first-duckling hint). */

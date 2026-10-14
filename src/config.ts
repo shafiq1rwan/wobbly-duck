@@ -23,11 +23,11 @@ export const CONFIG = {
 
   world: {
     /** Starting scroll speed; ramps linearly to `maxSpeed` over `speedRampMetres` of a run. */
-    baseSpeed: 360,
-    maxSpeed: 600,
-    speedRampMetres: 1600,
+    baseSpeed: 440,
+    maxSpeed: 700,
+    speedRampMetres: 1400,
     /** Slow scroll used behind the main menu. */
-    menuSpeed: 140,
+    menuSpeed: 180,
     /** Speed decay after a crash (units/s²). */
     crashDecel: 900,
     /** World units per displayed metre. */
@@ -122,8 +122,8 @@ export const CONFIG = {
      */
     layers: [
       { key: 'bg-clouds', file: 'bg-clouds.webp', height: 150, gap: 160, sink: 8, parallax: 0.025 },
-      { key: 'bg-rocks', file: 'bg-rocks.webp', height: 115, gap: 260, sink: 8, parallax: 0.06 },
-      { key: 'bg-palms', file: 'bg-palms.webp', height: 195, gap: 420, sink: 8, parallax: 0.12 },
+      { key: 'bg-rocks', file: 'bg-rocks.webp', height: 115, gap: 160, sink: 8, parallax: 0.06 },
+      { key: 'bg-palms', file: 'bg-palms.webp', height: 195, gap: 240, sink: 8, parallax: 0.12 },
     ],
   },
 
@@ -298,7 +298,7 @@ export const CONFIG = {
 
   /** Collectibles. Heights are measured as the duck's centre above its swimming position. */
   food: {
-    poolSize: 48,
+    poolSize: 90,
     kinds: {
       // Score per pickup, before the parade multiplier (× 1 + ducklings).
       corn: { key: 'food-corn', file: 'food-corn-v2.webp', scale: 0.5, points: 50 },
@@ -349,9 +349,9 @@ export const CONFIG = {
     /** Added to the duck's collider radius when picking up a lost duckling. */
     pickupRadius: 12,
     /** Spawning: first one at this distance, then every `every` metres while the parade isn't full. */
-    firstAtMetres: 150,
-    everyMin: 300,
-    everyMax: 500,
+    firstAtMetres: 80,
+    everyMin: 220,
+    everyMax: 380,
     /** After losing one, the next lost duckling comes sooner. */
     afterLossMetres: 150,
     /** A knocked-off duckling tumbles away for this long. */
@@ -362,10 +362,18 @@ export const CONFIG = {
   spawner: {
     firstPatternDistance: 700,
     tiers: [
-      { fromMetres: 0, gapMin: 1.5, gapMax: 2.4 },
-      { fromMetres: 200, gapMin: 1.3, gapMax: 2.0 },
-      { fromMetres: 800, gapMin: 1.2, gapMax: 1.7 },
+      { fromMetres: 0, gapMin: 0.9, gapMax: 1.5 },
+      { fromMetres: 200, gapMin: 0.8, gapMax: 1.3 },
+      { fromMetres: 800, gapMin: 0.7, gapMax: 1.1 },
     ],
+    /**
+     * Fairness, enforced across patterns whatever the gaps: obstacles you must jump are at least this
+     * many seconds apart, more after a crate (dashing through one skips you ahead).
+     */
+    minObstacleGap: 1.3,
+    afterCrateGap: 1.55,
+    /** Corn trail filling open water (Cookie Run style), kept clear of obstacles and ducklings. */
+    trail: { step: 0.13, clearance: 0.3, peasChance: 0.08 },
   },
 
   gameOverDelay: 0.75,
