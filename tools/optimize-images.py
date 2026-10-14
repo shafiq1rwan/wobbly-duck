@@ -27,24 +27,11 @@ MANIFEST = [
     ('duck-variants-v2/tufted-sheet.png', 'duck-tufted.webp', None, None, 90),
     ('duck-variants-v2/wigeon-sheet.png', 'duck-wigeon.webp', None, None, 90),
     ('duck-variants-v2/mandarin-sheet.png', 'duck-mandarin.webp', None, None, 90),
-    # Four-frame reaction sheets: preserve 256x256 cells.
-    ('duck-reactions-v1/duck-land-sheet.png', 'duck-land-sheet.webp', None, None, 90),
-    ('duck-reactions-v1/duck-hurt-sheet.png', 'duck-hurt-sheet.webp', None, None, 90),
-    # Food collectibles: preserve square canvas and centre pivot.
-    ('food-collectibles-v1/corn.png', 'food-corn.webp', None, 96, 90),
-    ('food-collectibles-v1/peas.png', 'food-peas.webp', None, 96, 90),
-    ('food-collectibles-v1/seed.png', 'food-seed.webp', None, 96, 90),
-    ('food-treats-v2/corn.png', 'food-corn-v2.webp', None, 96, 90),
-    ('food-treats-v2/peas.png', 'food-peas-v2.webp', None, 96, 90),
-    ('food-treats-v2/bonus-corn.png', 'food-bonus-corn-v2.webp', None, 96, 90),
     # Obstacles v3 (in use for log and crate): chubby log, flat front-on crate. Already packed by Codex.
     ('obstacles-duck-style-v3/log.png', 'obstacle-log-v3.webp', None, None, 90),
     ('obstacles-duck-style-v3/box.png', 'obstacle-box-v3.webp', None, None, 90),
-    # Optional obstacle art with outlines matching each material's colour.
-    ('obstacles-colour-outline-v2/log.png', 'obstacle-log-v2.webp', (233, 515), 64, 90),
-    ('obstacles-colour-outline-v2/box.png', 'obstacle-box-v2.webp', (257, 1067), 160, 90),
+    # Rock from the colour-outline set (log and crate are v3).
     ('obstacles-colour-outline-v2/rock.png', 'obstacle-rock-v2.webp', None, 192, 90),
-    ('obstacles-colour-outline-v2/mid-air-loop.png', 'obstacle-loop-v2.webp', (118, 1116), 320, 90),
     # Corn-kernel collectibles (split by tools/split-kernel-sheet.py): square, body centred.
     ('kernels-v1/yellow.png', 'kernel-yellow.webp', None, 160, 90),
     ('kernels-v1/orange.png', 'kernel-orange.webp', None, 160, 90),
@@ -66,6 +53,23 @@ MANIFEST = [
     ('parallax-alpine-lake-v1/clouds.png', 'bg-lake-clouds.webp', (448, 737), 320, 85),
     ('parallax-green-lake-v1/distant-mountains.png', 'bg-lake-mountains.webp', (395, 671), 280, 85),
     ('parallax-alpine-lake-v1/pine-islands.png', 'bg-lake-pines.webp', (259, 766), 430, 85),
+]
+
+
+# Not shipped (unused in the game; sources stay in assets-src/). Move a line back into MANIFEST to
+# export it again.
+UNUSED = [
+    ('duck-reactions-v1/duck-land-sheet.png', 'duck-land-sheet.webp', None, None, 90),
+    ('duck-reactions-v1/duck-hurt-sheet.png', 'duck-hurt-sheet.webp', None, None, 90),
+    ('food-collectibles-v1/corn.png', 'food-corn.webp', None, 96, 90),
+    ('food-collectibles-v1/peas.png', 'food-peas.webp', None, 96, 90),
+    ('food-collectibles-v1/seed.png', 'food-seed.webp', None, 96, 90),
+    ('food-treats-v2/corn.png', 'food-corn-v2.webp', None, 96, 90),
+    ('food-treats-v2/peas.png', 'food-peas-v2.webp', None, 96, 90),
+    ('food-treats-v2/bonus-corn.png', 'food-bonus-corn-v2.webp', None, 96, 90),
+    ('obstacles-colour-outline-v2/log.png', 'obstacle-log-v2.webp', (233, 515), 64, 90),
+    ('obstacles-colour-outline-v2/box.png', 'obstacle-box-v2.webp', (257, 1067), 160, 90),
+    ('obstacles-colour-outline-v2/mid-air-loop.png', 'obstacle-loop-v2.webp', (118, 1116), 320, 90),
     ('river-background-v1/willow-banks.png', 'bg-river-willows.webp', (470, 748), 320, 85),
     ('river-background-v1/reed-banks.png', 'bg-river-reeds.webp', (322, 689), 160, 85),
 ]

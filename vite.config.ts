@@ -22,6 +22,10 @@ export default defineConfig(({ mode }) => ({
   // Relative asset paths so the build works from any sub-folder (required by most web game portals).
   base: './',
   define: { __APP_VERSION__: JSON.stringify(buildVersion()) },
+  resolve: {
+    // Phaser's official build without Matter physics (the game's physics is hand-written): ~110 KB less.
+    alias: [{ find: /^phaser$/, replacement: 'phaser/dist/phaser-arcade-physics.min.js' }],
+  },
   plugins: [
     {
       name: 'poki-sdk',
@@ -34,7 +38,7 @@ export default defineConfig(({ mode }) => ({
     assetsInlineLimit: 0,
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
-      output: { manualChunks: { phaser: ['phaser'] } },
+      output: { manualChunks: (id) => (id.includes('node_modules/phaser/') ? 'phaser' : undefined) },
     },
   },
 }));

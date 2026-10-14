@@ -1,0 +1,28 @@
+/*
+ * Fredoka (OFL, via @fontsource/fredoka): only the Latin woff2 files the UI uses. The package's own
+ * CSS also ships Hebrew and Latin-extended subsets plus legacy .woff copies, which the game never
+ * loads but which would still end up in the build.
+ */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('../node_modules/@fontsource/fredoka/files/fredoka-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('../node_modules/@fontsource/fredoka/files/fredoka-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('../node_modules/@fontsource/fredoka/files/fredoka-latin-700-normal.woff2') format('woff2');
+}
