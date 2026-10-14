@@ -3,6 +3,7 @@ import { CONFIG } from '../config';
 import type { ViewBounds } from '../core/Viewport';
 import { Duck } from './Duck';
 import { DuckView } from './DuckView';
+import type { LilyPads } from './LilyPads';
 import type { ObstacleManager } from './ObstacleManager';
 import type { Water } from './Water';
 
@@ -118,7 +119,16 @@ export class Parade {
   }
 
   /** Physics sub-step. `distance` is the total world distance scrolled. */
-  update(h: number, dx: number, distance: number, mother: Duck, water: Water, obstacles: ObstacleManager, view: ViewBounds): void {
+  update(
+    h: number,
+    dx: number,
+    distance: number,
+    mother: Duck,
+    water: Water,
+    obstacles: ObstacleManager,
+    pads: LilyPads,
+    view: ViewBounds,
+  ): void {
     // Fit a full parade between the mother and the left edge of the view (narrow phones).
     const room = mother.anchorX - view.left - 30 - P.firstGap;
     const spacing = Math.max(P.minSpacing, Math.min(P.spacing, room / (P.max - 1)));
@@ -147,6 +157,7 @@ export class Parade {
             if (d.jumpDelay < 0) duck.requestJump();
           }
           duck.step(h, water);
+          pads.tryBounce(duck, false); // ducklings bounce on lily pads too, along the same path
           if (obstacles.hitTest(duck.collider)) {
             this.leave(d);
             this.resequence();
@@ -172,7 +183,9 @@ export class Parade {
     for (const d of this.all) {
       if (d.state === 'idle') continue;
       const duck = d.duck;
-      if (duck.justJumped) d.view.onJump();
+      if (duck.justDoubleJumped) d.view.onDoubleJump();
+      else if (duck.justJumped) d.view.onJump();
+      if (duck.justBounced) d.view.onBounce();
       if (duck.justLanded) {
         const strength = Math.min(1.2, duck.landingSpeed / M.jump.velocity);
         d.view.onLand(strength * 0.8);

@@ -55,7 +55,7 @@ export class UI {
       let pending = false;
       // Squishy feedback: squash while held, jelly wobble on release (see .pressed / .jelly in CSS).
       el.addEventListener('pointerdown', (e) => {
-        e.stopPropagation(); // keep button presses from being read as swipes
+        e.stopPropagation(); // keep button presses from being read as jump/dash taps
         el.classList.remove('jelly');
         el.classList.add('pressed');
         handlers.onButton();
@@ -120,6 +120,14 @@ export class UI {
   /** Controls hint on the main menu — shown until the player has started a run. */
   setHintVisible(visible: boolean): void {
     $('menu-hint').style.visibility = visible ? 'visible' : 'hidden';
+  }
+
+  /** Touch devices, first few runs: faint JUMP / DASH over the two tap halves, faded out by CSS. */
+  showTouchZones(): void {
+    const el = $('touch-zones');
+    el.hidden = false;
+    el.onanimationend = () => (el.hidden = true); // otherwise it replays whenever the HUD reappears
+    restartAnimation(el, 'show');
   }
 
   setDistance(metres: number): void {

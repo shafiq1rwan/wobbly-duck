@@ -26,6 +26,10 @@ export interface Entry {
   on?: ObstacleType;
   /** A lost duckling to rescue (Duckling Parade). */
   duckling?: boolean;
+  /** A lily pad that bounces the duck high. */
+  pad?: boolean;
+  /** Food only reachable with a double jump (used for the first-time hint). */
+  sky?: boolean;
 }
 
 interface Pattern {
@@ -39,27 +43,52 @@ interface Pattern {
 
 // ------------------------------------------------------------------ jump arc
 
-/** Simulates a full-height jump with the duck's physics, so food arcs match the real trajectory. */
-const JUMP = (() => {
+/**
+ * Simulates a flight with the duck's physics (gravity, apex hang, height cap), so food arcs match
+ * the real trajectory. `doubleAtApex` adds the mid-air second jump at the top of the first.
+ */
+function simulateFlight(v0: number, doubleAtApex: boolean) {
   const j = CONFIG.duck.jump;
   const dt = 1 / 240;
   const heights = [0];
   let y = 0;
-  let vy = -j.velocity;
+  let vy = -v0;
+  let doubled = !doubleAtApex;
   for (;;) {
+    if (!doubled && vy >= 0) {
+      vy = -j.velocity * j.doubleJumpFactor;
+      doubled = true;
+    }
     let g = j.gravity;
     if (vy > 0) g *= j.fallMultiplier;
     if (Math.abs(vy) < j.apexThreshold) g *= j.apexMultiplier;
     vy = Math.min(vy + g * dt, j.maxFallSpeed);
     y += vy * dt;
+    if (-y > j.maxHeight) {
+      y = -j.maxHeight;
+      vy = Math.max(vy, 0);
+    }
     if (vy > 0 && y >= 0) break;
     heights.push(-y);
   }
   return {
     airtime: heights.length * dt,
     heightAt: (tau: number) => heights[Math.max(0, Math.min(heights.length - 1, Math.round(tau / dt)))],
+    /** First and last time the flight is above `h`. */
+    above(h: number): [number, number] {
+      const first = heights.findIndex((v) => v >= h);
+      let last = heights.length - 1;
+      while (last > 0 && heights[last] < h) last--;
+      return [first * dt, last * dt];
+    },
   };
-})();
+}
+
+const JUMP = simulateFlight(CONFIG.duck.jump.velocity, false);
+const DOUBLE = simulateFlight(CONFIG.duck.jump.velocity, true);
+const BOUNCE = simulateFlight(CONFIG.lilyPads.bounceVelocity, false);
+/** A single jump (plus pickup reach) can't get this high — sky food needs the double jump. */
+const SKY_HEIGHT = 250;
 
 // ------------------------------------------------------------------ builders
 
@@ -96,6 +125,27 @@ function arc(tCenter: number, n: number, kind: FoodRole, apexKind?: FoodRole): E
   });
 }
 
+/** `n` food items high in the sky along a double jump taken off at `tTakeoff`. */
+function skyArc(tTakeoff: number, n: number, kind: FoodRole): Entry[] {
+  const [a, b] = DOUBLE.above(SKY_HEIGHT);
+  return Array.from({ length: n }, (_, i) => {
+    const tau = a + ((b - a) * i) / Math.max(1, n - 1);
+    return { t: tTakeoff + tau, food: kind, h: DOUBLE.heightAt(tau), sky: true };
+  });
+}
+
+const pad = (t: number): Entry => ({ t, pad: true });
+
+/** `n` food items along the lily-pad bounce from the pad at time `tPad`. */
+function bounceArc(tPad: number, n: number, kind: FoodRole): Entry[] {
+  const T = BOUNCE.airtime;
+  const lead = 0.08; // the bounce starts as the duck reaches the pad's edge, a moment before its centre
+  return Array.from({ length: n }, (_, i) => {
+    const tau = T * (0.2 + (0.6 * i) / Math.max(1, n - 1));
+    return { t: tPad - lead + tau, food: kind, h: BOUNCE.heightAt(tau) };
+  });
+}
+
 function pattern(name: string, minTier: number, weight: number, ...parts: (Entry | Entry[])[]): Pattern {
   const entries = parts.flat();
   // Normalise so the first entry is at t = 0 (nothing pops in on screen).
@@ -116,6 +166,9 @@ const PATTERNS: Pattern[] = [
   pattern('log-crown', 0, 2, ob(0, 'log'), crown(0, 3, 'common')),
   pattern('corn-line', 0, 2, line(0, 5, 'common')),
   pattern('log-arc', 0, 3, ob(0, 'log'), arc(0, 5, 'common')),
+  // Double jump and lily pads.
+  pattern('sky-arc', 0, 3, line(0, 3, 'common'), skyArc(0.5, 6, 'mid')),
+  pattern('lily-bounce', 0, 3, line(0, 3, 'common'), pad(0.55), bounceArc(0.55, 6, 'rare')),
   pattern('crate-peas', 0, 1, ob(0, 'crate'), line(0.55, 3, 'mid')),
 
   // Tier 1 — variety and some two-obstacle patterns.
@@ -126,6 +179,8 @@ const PATTERNS: Pattern[] = [
   pattern('rock-crown', 1, 1, ob(0, 'rock'), crown(0, 3, 'common', 'rare')),
   pattern('log-rock', 1, 2, ob(0, 'log'), ob(1.5, 'rock'), arc(1.5, 3, 'mid')),
   pattern('rock-crate', 1, 1, ob(0, 'rock'), ob(1.45, 'crate'), line(1.95, 3, 'common')),
+  pattern('log-sky', 1, 2, ob(0, 'log'), skyArc(-0.4, 5, 'rare')),
+  pattern('lily-log', 1, 2, pad(0), bounceArc(0, 5, 'mid'), ob(1.9, 'log')),
   pattern('open-arc', 1, 1, line(0, 3, 'common'), arc(0.9, 6, 'mid', 'rare')),
 
   // Tier 2 — faster, longer combinations, more reward.
@@ -133,6 +188,7 @@ const PATTERNS: Pattern[] = [
   pattern('rock-rock', 2, 2, ob(0, 'rock'), arc(0, 3, 'common'), ob(1.35, 'rock'), arc(1.35, 3, 'common')),
   pattern('triple-log', 2, 1, ob(0, 'log'), ob(1.3, 'log'), ob(2.6, 'log'), arc(1.3, 5, 'mid')),
   // Two quick crates: dash through both (cooldown 0.7 s) — or jump them with good timing.
+  pattern('lily-chain', 2, 1, pad(0), bounceArc(0, 5, 'rare'), pad(1.85), bounceArc(1.85, 5, 'rare')),
   pattern('crate-crate', 2, 1, ob(0, 'crate'), lid(0, 'common'), ob(1.05, 'crate'), lid(1.05, 'common'), line(1.55, 4, 'common')),
   pattern('seed-run', 2, 1, ob(0, 'log'), arc(0, 5, 'rare'), ob(1.5, 'rock')),
 ];
@@ -156,12 +212,16 @@ export class Spawner {
   private prevEnd = 0;
   /** Last scheduled obstacle that must be cleared, for cross-pattern fairness. */
   private lastObstacleAt = -Infinity;
-  private lastObstacleType: ObstacleType | null = null;
+  private lastObstacleType: ObstacleType | 'pad' | null = null;
   private last: Pattern | null = null;
+  /** Scripted opening (pattern names, or null for a random pick) — teaches new players. */
+  private intro: (string | null)[] = [];
   /** Run distance (m) after which the next lost duckling may appear. */
   private nextDucklingMetres = 0;
 
-  reset(distance: number): void {
+  /** `intro` forces the first patterns of a run by name (null = random), e.g. for new players. */
+  reset(distance: number, intro: (string | null)[] = []): void {
+    this.intro = [...intro];
     this.queue.length = 0;
     this.nextPatternAt = distance + CONFIG.spawner.firstPatternDistance;
     this.prevEnd = distance + 250; // a corn trail leads into the first pattern
@@ -215,13 +275,17 @@ export class Spawner {
         break;
       }
     }
+    const scripted = this.intro.length ? this.intro.shift() : null;
+    if (scripted) picked = PATTERNS.find((p) => p.name === scripted) ?? picked;
     this.last = picked;
 
     // Fairness across patterns: the first obstacle must come far enough after the previous one.
-    const obstacles = picked.entries.filter((e) => e.obstacle);
+    // Obstacles and lily pads both count for spacing (after a pad the duck lands far ahead).
+    const obstacles = picked.entries.filter((e) => e.obstacle || e.pad);
     let start = this.nextPatternAt;
     if (obstacles.length) {
-      const need = (this.lastObstacleType === 'crate' ? cfg.afterCrateGap : cfg.minObstacleGap) * speed;
+      const gap = this.lastObstacleType === 'crate' ? cfg.afterCrateGap : this.lastObstacleType === 'pad' ? cfg.afterPadGap : cfg.minObstacleGap;
+      const need = gap * speed;
       start = Math.max(start, this.lastObstacleAt + need - obstacles[0].t * speed);
     }
 
@@ -232,7 +296,7 @@ export class Spawner {
     if (obstacles.length) {
       const lastObstacle = obstacles[obstacles.length - 1];
       this.lastObstacleAt = start + lastObstacle.t * speed;
-      this.lastObstacleType = lastObstacle.obstacle!;
+      this.lastObstacleType = lastObstacle.pad ? 'pad' : lastObstacle.obstacle!;
     }
     this.queue.sort((a, b) => a.at - b.at);
 

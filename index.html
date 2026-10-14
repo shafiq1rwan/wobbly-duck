@@ -17,6 +17,8 @@
     <link rel="preload" as="image" href="./assets/obstacle-log-v2.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/obstacle-box-v2.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/obstacle-rock-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/lily-pads.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/frog-hop.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/kernel-yellow.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/kernel-orange.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/kernel-honey.webp" type="image/webp" />
@@ -45,6 +47,10 @@
         </div>
         <div id="hud-score" class="hud-score">0</div>
         <div id="toast" class="toast" hidden></div>
+        <div id="touch-zones" class="touch-zones" aria-hidden="true" hidden>
+          <span class="zone">JUMP</span>
+          <span class="zone">DASH</span>
+        </div>
         <button id="btn-pause" class="icon-btn icon-btn-square" aria-label="Pause">
           <svg class="icon"><use href="#i-pause" /></svg>
         </button>
@@ -78,7 +84,7 @@
         </div>
         <p id="menu-hint" class="hint">
           <span class="hint-desktop">Space / W / ↑ to jump &nbsp;·&nbsp; D / → to dash</span>
-          <span class="hint-touch">Swipe up to jump &nbsp;·&nbsp; Swipe right to dash</span>
+          <span class="hint-touch">Tap left to jump &nbsp;·&nbsp; Tap right to dash</span>
         </p>
       </div>
 

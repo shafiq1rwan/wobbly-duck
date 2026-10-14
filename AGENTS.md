@@ -12,7 +12,8 @@ then the doc that matches your task:
 
 A 2D side-scrolling endless runner for desktop and mobile browsers, aimed at Poki. A chubby
 yellow duck floats on an endless river; the world scrolls right-to-left. The player jumps
-(Space / W / ↑, swipe up) and dashes (D / →, swipe right) to avoid logs, rocks and crates and
+(Space / W / ↑, or tap the left half; again in the air for a double jump) and dashes
+(D / →, or tap the right half) to avoid logs, rocks and crates and
 to collect food (corn kernels, peas, and rare big corn). Sessions are short and restarting is instant.
 
 Design pillars — check every change against these:
@@ -47,7 +48,8 @@ src/platform/            Portal adapter — no-op locally; Poki SDK goes here in
 src/art/duckSprite.ts    Duck sheet layout: frame size, pivot, scale, animations
 src/game/                Duck (controller), DuckView (visuals + squash/stretch), Spring, Water (waves +
                          ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
-                         ObstacleManager (log/crate/rock), FoodManager, Parade (ducklings),
+                         ObstacleManager (log/crate/rock), FoodManager, LilyPads (bounce pads + frogs),
+                         Parade (ducklings),
                          ScorePopups, Patterns (handcrafted
                          patterns + Spawner, difficulty tiers), Background
 src/scenes/              BootScene (loading), GameScene (state machine + loop)

@@ -10,6 +10,7 @@ import { DashMeter } from '../game/DashMeter';
 import { Duck } from '../game/Duck';
 import { DuckView } from '../game/DuckView';
 import { FoodManager, type FoodKind } from '../game/FoodManager';
+import { LilyPads, type LilyPadEvents } from '../game/LilyPads';
 import { ObstacleManager, type Obstacle } from '../game/ObstacleManager';
 import { Parade, type ParadeEvents } from '../game/Parade';
 import { Spawner, type Entry, type FoodRole } from '../game/Patterns';
@@ -22,7 +23,7 @@ import { UI } from '../ui/UI';
 type State = 'menu' | 'playing' | 'paused' | 'crashed' | 'gameover';
 
 /** Background uses 0–4 (sky + parallax layers); the ocean body sits behind obstacles, the water tint in front. */
-const DEPTH = { background: 0, waterBack: 5, obstacles: 10, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, debug: 100 };
+const DEPTH = { background: 0, waterBack: 5, pads: 9, obstacles: 10, frogs: 11, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, debug: 100 };
 const DEBUG = new URLSearchParams(window.location.search).has('debug');
 /** Ignore restart input for a moment after the game-over screen appears (prevents mash-restarts). */
 const RESTART_LOCKOUT = 0.35;
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
   private background!: Background;
   private splashes!: Splashes;
   private parade!: Parade;
+  private pads!: LilyPads;
   private popups!: ScorePopups;
   private dashMeter!: DashMeter;
   private readonly shake = new CameraShake();
@@ -99,6 +101,7 @@ export class GameScene extends Phaser.Scene {
     this.water = new Water(this, DEPTH.waterBack, DEPTH.water, this.view);
     this.splashes = new Splashes(this, DEPTH.splashes);
     this.parade = new Parade(this, DEPTH.ducklings, this.paradeEvents);
+    this.pads = new LilyPads(this, DEPTH.pads, DEPTH.frogs, this.padEvents);
     this.popups = new ScorePopups(this, DEPTH.popups);
     this.dashMeter = new DashMeter(this, DEPTH.meter);
     this.audio = new AudioManager(loadNumber('muted') === 1);
@@ -145,6 +148,7 @@ export class GameScene extends Phaser.Scene {
     // Paused and game over freeze the whole scene (world, water, sprite animation).
     this.duckView.setFrozen(state === 'paused' || state === 'gameover');
     this.parade.setFrozen(state === 'paused' || state === 'gameover');
+    this.pads.setFrozen(state === 'paused' || state === 'gameover');
     this.state = state;
     this.stateTime = 0;
     this.ui.show(state === 'crashed' ? 'playing' : state);
@@ -155,6 +159,7 @@ export class GameScene extends Phaser.Scene {
     this.obstacles.clear();
     this.food.clear();
     this.parade.clear();
+    this.pads.clear();
     this.popups.clear();
     this.spawner.reset(this.worldDistance);
     this.spawner.active = false;
@@ -178,6 +183,8 @@ export class GameScene extends Phaser.Scene {
     this.dashMeter.reset();
     this.shake.reset();
     this.clearRiver();
+    // New players (first 3 runs): a lily pad and a double-jump sky arc early on, so both hints show.
+    if (this.runs < 3) this.spawner.reset(this.worldDistance, [null, 'lily-bounce', null, 'sky-arc']);
     this.spawner.active = true;
     this.runStart = this.worldDistance;
     this.speed = this.baseSpeed();
@@ -190,6 +197,7 @@ export class GameScene extends Phaser.Scene {
     this.ui.setParade(0, 'reset');
     saveNumber('runs', ++this.runs);
     this.setState('playing');
+    if (this.runs <= 3) this.ui.showTouchZones();
     platform.gameplayStarted();
   }
 
@@ -276,7 +284,7 @@ export class GameScene extends Phaser.Scene {
     for (const action of this.controls.consume()) {
       switch (this.state) {
         case 'menu':
-          if (action === 'confirm' || action === 'jump') this.startRun();
+          if (action === 'confirm' || action === 'jump' || action === 'dash') this.startRun(); // any tap starts
           break;
         case 'playing':
           if (action === 'jump') this.duck.requestJump();
@@ -311,6 +319,7 @@ export class GameScene extends Phaser.Scene {
     this.duckEffects(dt);
     this.duckView.sync(this.duck, dt);
     this.parade.sync(dt);
+    this.pads.sync(dt);
     this.popups.update(dt, this.frameDx);
     // Events can be raised by input (dash) or physics (jump, landing); consume them once per frame.
     this.duck.clearEvents();
@@ -345,14 +354,16 @@ export class GameScene extends Phaser.Scene {
     this.background.update(dx, this.view);
     this.obstacles.update(h, dx, this.water, this.view);
     this.food.update(h, dx, this.water, this.view);
+    this.pads.update(h, dx, this.water, this.view, this.duck);
     const wantDuckling = this.parade.total < CONFIG.ducklings.max;
     this.spawner.update(this.worldDistance, this.runMetres(), this.baseSpeed(), wantDuckling, this.spawnEntry);
     this.duck.step(h, this.water);
+    if (this.state === 'playing') this.pads.tryBounce(this.duck, true);
     if (this.duck.jumpCount !== this.lastJumpCount) {
       this.lastJumpCount = this.duck.jumpCount;
       this.parade.onMotherJump(this.worldDistance, this.duck.x);
     }
-    this.parade.update(h, dx, this.worldDistance, this.duck, this.water, this.obstacles, this.view);
+    this.parade.update(h, dx, this.worldDistance, this.duck, this.water, this.obstacles, this.pads, this.view);
 
     if (this.state !== 'playing') return;
     const hit = this.obstacles.hitTest(this.duck.collider);
@@ -368,6 +379,9 @@ export class GameScene extends Phaser.Scene {
     const x = this.view.right + CONFIG.obstacles.spawnMargin - overdue;
     if (entry.obstacle) {
       this.obstacles.spawn(entry.obstacle, x, this.water);
+    } else if (entry.pad) {
+      this.pads.spawn(x, this.water);
+      this.hintOnce('seenLilyPad', 'Swim onto lily pads to bounce high!');
     } else if (entry.duckling) {
       this.parade.spawnLost(x, this.water);
       if (!loadNumber('seenDuckling')) {
@@ -385,6 +399,7 @@ export class GameScene extends Phaser.Scene {
         this.food.spawn(kind, x, h, t.waveFollow, true, this.water);
       } else if (entry.h !== undefined) {
         this.food.spawn(kind, x, entry.h, 0, false, this.water); // along a jump arc
+        if (entry.sky) this.hintOnce('seenDoubleJump', 'Jump again in the air to double jump!');
       } else {
         this.food.spawn(kind, x, F.lowHeight, 1, false, this.water); // floating on the water
       }
@@ -425,6 +440,31 @@ export class GameScene extends Phaser.Scene {
     },
   };
 
+  /** Lily pad and frog feedback. */
+  private readonly padEvents: LilyPadEvents = {
+    bounced: (x, y, mother) => {
+      this.water.disturb(x, mother ? 120 : 60, 50);
+      this.splashes.burst(x, y + 10, mother ? 10 : 4, 150, 320, -2.6, -0.5, 2.5, 4.5);
+      if (mother) {
+        this.audio.play('boing');
+        this.shake.add(CONFIG.camera.shake.landing * 0.6);
+      }
+    },
+    frogLeapt: () => this.audio.play('ribbit'),
+    frogSplash: (x, y) => {
+      this.water.disturb(x, 90, 30);
+      this.splashes.burst(x, y, 6, 120, 260, -2.4, -0.7, 2.5, 4);
+      this.audio.play('splashSmall');
+    },
+  };
+
+  /** Shows a first-time hint once per device. */
+  private hintOnce(key: string, message: string): void {
+    if (loadNumber(key)) return;
+    saveNumber(key, 1);
+    this.ui.showToast(message);
+  }
+
   /** Dash through a crate: it bursts into wood pieces, and any food on its lid is collected. */
   private smash(o: Obstacle): void {
     const { x, y } = o;
@@ -443,13 +483,19 @@ export class GameScene extends Phaser.Scene {
     const sp = CONFIG.splash;
     const surface = this.water.heightAt(d.x);
 
-    if (d.justJumped) {
+    if (d.justDoubleJumped) {
+      // Mid-air: a puff of air instead of a water splash.
+      this.duckView.onDoubleJump();
+      this.splashes.sparkle(d.x - 6, d.y + 22, 8, [0xffffff, 0xeaf8ff, 0xd6f1ff]);
+      this.audio.play('doubleJump');
+    } else if (d.justJumped) {
       this.duckView.onJump();
       this.water.disturb(d.x, sp.takeoffRipple, 36);
       this.splashes.burst(d.x, surface, sp.takeoffDrops, 150, 300, -2.3, -0.9, 2.5, 4.5);
       this.audio.play('jump');
       this.audio.play('splashSmall');
     }
+    if (d.justBounced) this.duckView.onBounce();
     if (d.justLanded) {
       const strength = Phaser.Math.Clamp(d.landingSpeed / CONFIG.duck.jump.velocity, 0, 1.3);
       this.duckView.onLand(strength);
@@ -510,6 +556,8 @@ export class GameScene extends Phaser.Scene {
     g.strokeCircle(c.x, c.y, c.r);
     this.obstacles.forEachActive((b) => g.strokeRect(b.x - b.halfW, b.y - b.halfH, b.halfW * 2, b.halfH * 2));
     this.parade.forEachCollider((x, y, r) => g.strokeCircle(x, y, r));
+    g.lineStyle(2, 0x22cc66, 0.9);
+    this.pads.forEachPad((x, top, halfW) => g.strokeRect(x - halfW, top - CONFIG.lilyPads.catchHeight, halfW * 2, CONFIG.lilyPads.catchHeight + 20));
     const pickup = c.r + CONFIG.food.pickupRadius;
     g.lineStyle(1, 0x22aa44, 0.8);
     this.food.forEachActive((x, y) => g.strokeCircle(x, y, pickup - c.r));

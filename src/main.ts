@@ -34,7 +34,7 @@ function start(): void {
       mipmapFilter: 'LINEAR_MIPMAP_LINEAR',
       powerPreference: 'high-performance',
     },
-    // Input is handled by our own InputManager (keyboard + swipe) and the DOM UI.
+    // Input is handled by our own InputManager (keyboard + left/right tap halves) and the DOM UI.
     input: { keyboard: false, mouse: false, touch: false, gamepad: false },
     // Phaser audio is off: sound effects use our own Web Audio player (src/core/Audio.ts).
     audio: { noAudio: true },

@@ -86,7 +86,7 @@ body {
 #ui {
   position: fixed;
   inset: 0;
-  pointer-events: none; /* let swipes reach the canvas */
+  pointer-events: none; /* let taps reach the canvas */
   padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px)
     calc(var(--safe-left) + 16px);
 }
@@ -468,7 +468,7 @@ button {
   text-align: center;
 }
 
-/* Small, faint credit at the bottom centre; ignores pointer input so swipes pass through. */
+/* Small, faint credit at the bottom centre; ignores pointer input so taps pass through. */
 #credit {
   position: fixed;
   left: 0;
@@ -611,6 +611,48 @@ button {
 
 .toast.show {
   animation: fade-in 200ms ease-out;
+}
+
+/* First runs on touch devices: faint JUMP / DASH in the centre of each tap half, then gone. */
+.touch-zones {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  pointer-events: none;
+}
+
+.touch-zones .zone {
+  flex: 1;
+  text-align: center;
+  font-size: clamp(28px, 8vmin, 56px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  text-shadow: 0 2px 0 rgba(30, 70, 125, 0.35);
+}
+
+.touch-zones.show {
+  animation: touch-zones 4s ease-out forwards;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .touch-zones:not([hidden]) {
+    display: flex;
+  }
+}
+
+@keyframes touch-zones {
+  0% {
+    opacity: 0;
+  }
+  8%,
+  70% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .go-score {

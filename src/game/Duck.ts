@@ -47,11 +47,17 @@ export class Duck {
 
   /** Set for one step when something notable happens — consumed by the view/effects. */
   justJumped = false;
+  /** Set together with justJumped when the jump was the mid-air second jump. */
+  justDoubleJumped = false;
+  /** Launched by a lily pad this step. */
+  justBounced = false;
   justLanded = false;
   justDashed = false;
   landingSpeed = 0;
   /** Increments on every jump (lets followers react to jumps between frames). */
   jumpCount = 0;
+  /** Jumps used since leaving the water (2 = double jump spent). */
+  private airJumps = 0;
 
   readonly collider: Circle;
   private readonly floatOffset: number;
@@ -103,7 +109,7 @@ export class Duck {
   }
 
   clearEvents(): void {
-    this.justJumped = this.justLanded = this.justDashed = false;
+    this.justJumped = this.justDoubleJumped = this.justBounced = this.justLanded = this.justDashed = false;
   }
 
   requestJump(): void {
@@ -151,7 +157,7 @@ export class Duck {
     const bob = b.bobAmplitude * Math.sin(this.time * b.bobFrequency * Math.PI * 2);
     const floatY = water.heightAt(this.x) - this.floatOffset + bob;
 
-    if (this.jumpBuffer > 0 && this.canJump(floatY)) this.jump();
+    if (this.jumpBuffer > 0 && this.canJump(floatY)) this.jump(floatY);
 
     if (this.airborne) {
       const j = D.jump;
@@ -183,15 +189,34 @@ export class Duck {
     this.updateCollider();
   }
 
+  /** Launched by a lily pad: like a big jump, and the double jump stays available. */
+  bounce(velocity: number): void {
+    if (!this.alive) return;
+    this.vy = -velocity;
+    this.airborne = true;
+    this.airJumps = 1;
+    this.justBounced = true;
+  }
+
   private canJump(floatY: number): boolean {
     if (!this.alive) return false;
     if (!this.airborne) return true;
-    // Forgiveness: falling and almost back on the water.
-    return this.vy > 0 && this.y >= floatY - D.jump.surfaceForgiveness;
+    // Forgiveness: falling and almost back on the water counts as a jump from the water.
+    if (this.vy > 0 && this.y >= floatY - D.jump.surfaceForgiveness) return true;
+    // Otherwise one extra jump in mid-air.
+    return this.airJumps < 2;
   }
 
-  private jump(): void {
-    this.vy = -D.jump.velocity;
+  private jump(floatY: number): void {
+    const nearWater = !this.airborne || (this.vy > 0 && this.y >= floatY - D.jump.surfaceForgiveness);
+    if (nearWater) {
+      this.vy = -D.jump.velocity;
+      this.airJumps = 1;
+    } else {
+      this.vy = -D.jump.velocity * D.jump.doubleJumpFactor;
+      this.airJumps = 2;
+      this.justDoubleJumped = true;
+    }
     this.airborne = true;
     this.jumpBuffer = 0;
     this.justJumped = true;
@@ -200,6 +225,7 @@ export class Duck {
 
   private land(): void {
     this.airborne = false;
+    this.airJumps = 0;
     this.landingSpeed = this.vy;
     this.vy *= D.buoyancy.landingVelocityKeep;
     this.justLanded = true;

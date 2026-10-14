@@ -80,7 +80,7 @@ obstacles. There is no dim overlay.
 | Play button (▶) | Centred below the logo, 190×66 | 52% width, 60 tall |
 | Best Distance badge | Centred under Play | Centred under Play |
 | Sound toggle | Top-right corner | Top-right corner |
-| Controls hint | Small, low-contrast text at the bottom; first visit only | Swipe hint at the bottom; first visit only |
+| Controls hint | Small, low-contrast text at the bottom; first visit only | Tap hint at the bottom ("Tap left to jump · Tap right to dash"); first visit only. First 3 runs: faint "JUMP" / "DASH" text in the centre of each half, faded out after ~4 s |
 
 Logo: "WOBBLY" in white over "DUCK" in yellow, heavy navy outline, slight arch and tilt, water
 splash droplets either side. It is an image asset (`logo.png`), not CSS text.
@@ -123,9 +123,9 @@ Enter = Play Again (after a 0.35 s lockout, already implemented). Home returns t
 ## Behaviour
 
 - Show screens via `UI.show(screen)`; screens are `hidden`-toggled sections in `index.html`.
-- Buttons stop pointer propagation so taps are never read as swipes (already implemented).
+- Buttons stop pointer propagation so taps are never read as jump/dash taps (already implemented).
 - The overlay root has `pointer-events: none`; only buttons and cards take pointer events, so
-  swipes on empty space reach the canvas.
+  taps on empty space reach the canvas.
 - Sound toggle: persists `muted` via `src/core/Storage.ts`; its icon reflects state; audio starts
   only after the first user interaction.
 - Transitions: screens fade in over 150 ms; the game-over card rises 12 px while fading in. No

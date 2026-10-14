@@ -44,6 +44,10 @@ MANIFEST = [
     ('kernels-v1/ice.png', 'kernel-ice.webp', None, 160, 90),
     ('kernels-v1/rainbow.png', 'kernel-rainbow.webp', None, 160, 90),
     ('kernels-v1/crown.png', 'kernel-crown.webp', None, 160, 90),
+    # Lily pads (4 variants, bottom-aligned 256x160 cells) and the frog hop (6 frames, 192x192),
+    # packed from the owner's strips by tools/pack-strip.py.
+    ('lilypad-v1/lily-pads.png', 'lily-pads.webp', None, None, 90),
+    ('frog-v1/frog-hop.png', 'frog-hop.webp', None, None, 90),
     # Parallax layers: crop to the opaque band (bottom row = art baseline).
     ('parallax-no-outline-v2/clouds.png', 'bg-clouds.webp', (485, 752), 300, 85),
     ('parallax-no-outline-v2/distant-rocks.png', 'bg-rocks.webp', (427, 662), 240, 85),

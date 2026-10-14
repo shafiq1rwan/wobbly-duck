@@ -166,8 +166,10 @@ export const CONFIG = {
       apexMultiplier: 0.6,
       apexThreshold: 140,
       maxFallSpeed: 1500,
-      /** Hard cap on height above the rest water line. */
-      maxHeight: 260,
+      /** Hard cap on height above the rest water line (double jumps and lily-pad bounces go high). */
+      maxHeight: 390,
+      /** Second jump in mid-air: strength relative to the first. */
+      doubleJumpFactor: 0.85,
       /** Jump input is remembered this long (s). */
       bufferTime: 0.1,
       /** While falling, a jump is allowed this close above the float line. */
@@ -359,6 +361,46 @@ export const CONFIG = {
     },
   },
 
+  /** Lily pads: swimming onto one launches the duck (and each duckling) high into the air. */
+  lilyPads: {
+    key: 'lily-pads',
+    file: 'lily-pads.webp',
+    frameWidth: 256,
+    frameHeight: 160,
+    variants: 4,
+    /** World units per sheet pixel (≈116 units wide). */
+    scale: 0.47,
+    /**
+     * The sprite's origin is its bottom edge. `topOffset` = pad top above that edge (≈56 units);
+     * `sink` = how far the bottom edge sits below the water line (so the top is ~16 above it).
+     */
+    topOffset: 56,
+    sink: 40,
+    /** Bounce trigger: half width around the pad centre, and how far above it a falling duck still counts. */
+    halfW: 48,
+    catchHeight: 40,
+    bounceVelocity: 1350,
+    /** Chance a pad has a frog sitting on it. */
+    frogChance: 0.5,
+    /** The frog leaps off when the duck is this close (world units). */
+    frogScatterDistance: 260,
+    poolSize: 4,
+  },
+
+  /** Scenery frogs (not obstacles). */
+  frog: {
+    key: 'frog-hop',
+    file: 'frog-hop.webp',
+    frameSize: 192,
+    scale: 0.36,
+    /** Sprite centre above the pad top when sitting (frame 0's feet rest on the pad). */
+    sitOffset: 16,
+    /** Leap off the pad into the water: forward distance, peak height and duration. */
+    leapDistance: 150,
+    leapHeight: 95,
+    leapTime: 0.55,
+  },
+
   /**
    * Duckling Parade (docs/DUCKLING_PARADE.md): lost ducklings join a line behind the duck, copy its
    * jumps along the same path plus `extraLag` per place in line, and multiply food score ×(1 + count).
@@ -407,6 +449,8 @@ export const CONFIG = {
      */
     minObstacleGap: 1.3,
     afterCrateGap: 1.55,
+    /** After a lily pad the duck is in the air for ~1.1 s and lands far ahead: keep that water clear. */
+    afterPadGap: 1.7,
     /** Corn trail filling open water (Cookie Run style), kept clear of obstacles and ducklings. */
     trail: { step: 0.13, clearance: 0.3, peasChance: 0.08 },
   },

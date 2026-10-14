@@ -6,6 +6,8 @@ import { Spring } from './Spring';
 
 /** How long the landing frames play before returning to the swim cycle. */
 const LAND_TIME = 0.2;
+/** Duration of the double-jump somersault. */
+const FLIP_TIME = 0.38;
 const J = CONFIG.duck.jiggle;
 
 /**
@@ -25,6 +27,8 @@ export class DuckView {
   private landTimer = 0;
   private hurtTime = -1;
   private shakeTime = 0;
+  /** Remaining time of the double-jump somersault (s). */
+  private flipTime = 0;
   private readonly baseTint: number;
 
   /** `size` scales the whole duck (ducklings); `tint` colours it (placeholder duckling art). */
@@ -48,6 +52,7 @@ export class DuckView {
   reset(): void {
     this.hurtTime = -1;
     this.shakeTime = 0;
+    this.flipTime = 0;
     this.landTimer = 0;
     this.stretch.reset();
     this.tilt.reset();
@@ -74,6 +79,19 @@ export class DuckView {
     this.landTimer = LAND_TIME;
     this.stretch.velocity -= J.landingImpact * strength;
     this.tilt.velocity += J.tiltLandingKick * strength * (Math.random() < 0.5 ? -1 : 1);
+  }
+
+  /** Mid-air second jump: a quick forward somersault with a squash-and-stretch kick. */
+  onDoubleJump(): void {
+    this.flipTime = FLIP_TIME;
+    this.stretch.value = -J.jumpSquash * 0.8;
+    this.stretch.velocity = J.jumpKick * 0.9;
+  }
+
+  /** Launched by a lily pad: a big stretch. */
+  onBounce(): void {
+    this.stretch.value = -J.jumpSquash;
+    this.stretch.velocity = J.jumpKick * 1.3;
   }
 
   onDash(): void {
@@ -110,7 +128,14 @@ export class DuckView {
     this.squasher.setScale(1 / (1 + s), 1 + s);
 
     const tilt = Phaser.Math.Clamp(this.tilt.step(lean, dt), -J.tiltMax, J.tiltMax);
-    this.root.setRotation(duck.rotation + tilt);
+    // Somersault: one full forward turn, easing out, so it ends exactly where it started.
+    let flip = 0;
+    if (this.flipTime > 0) {
+      this.flipTime = Math.max(0, this.flipTime - dt);
+      const t = 1 - this.flipTime / FLIP_TIME;
+      flip = Math.PI * 2 * (1 - (1 - t) ** 3);
+    }
+    this.root.setRotation(duck.rotation + tilt + flip);
 
     let shakeX = 0;
     if (this.shakeTime > 0) {
