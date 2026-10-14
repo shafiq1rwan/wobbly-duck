@@ -50,20 +50,24 @@ export function installResizeHandling(game: Phaser.Game): void {
 }
 
 /**
- * Frames the side-view camera: keeps the 720-unit gameplay band visible, keeps at least
- * `minViewWidth` of world visible on narrow screens, and places the duck at `duckScreenX`.
+ * Frames the side-view camera: keeps the `refHeight` gameplay band visible, keeps at least
+ * `minViewWidth` of world visible on narrow screens, and places the duck between
+ * `duckScreenXNarrow` and `duckScreenXWide` depending on the visible width.
  * Never stretches — extra space on tall screens is mostly sky, with the water line kept low.
  */
 export function frameCamera(camera: Phaser.Cameras.Scene2D.Camera, duckAnchorX: number, out: ViewBounds): ViewBounds {
-  const { refHeight, minViewWidth, duckScreenX, minWaterFraction } = CONFIG.view;
+  const { refHeight, minViewWidth, minWaterFraction } = CONFIG.view;
   const restY = CONFIG.water.restY;
   const gw = camera.width;
   const gh = camera.height;
   const zoom = Math.min(gh / refHeight, gw / minViewWidth);
   const viewW = gw / zoom;
   const viewH = gh / zoom;
+  const v = CONFIG.view;
+  const t = Math.max(0, Math.min(1, (viewW - v.narrowViewWidth) / (v.wideViewWidth - v.narrowViewWidth)));
+  const duckScreenX = v.duckScreenXNarrow + (v.duckScreenXWide - v.duckScreenXNarrow) * t;
   const centerX = duckAnchorX + (0.5 - duckScreenX) * viewW;
-  // At 16:9 this shows exactly the 0–720 band; taller views add sky above and keep the water low.
+  // At 16:9 this shows exactly the 0–refHeight band; taller views add sky above and keep the water low.
   const waterBelow = Math.max(refHeight - restY, viewH * minWaterFraction);
   const centerY = restY + waterBelow - viewH / 2;
 

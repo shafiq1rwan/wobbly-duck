@@ -120,7 +120,8 @@ export class Parade {
   /** Physics sub-step. `distance` is the total world distance scrolled. */
   update(h: number, dx: number, distance: number, mother: Duck, water: Water, obstacles: ObstacleManager, view: ViewBounds): void {
     // Fit a full parade between the mother and the left edge of the view (narrow phones).
-    const spacing = Math.max(P.minSpacing, Math.min(P.spacing, (mother.anchorX - view.left - 30) / P.max));
+    const room = mother.anchorX - view.left - 30 - P.firstGap;
+    const spacing = Math.max(P.minSpacing, Math.min(P.spacing, room / (P.max - 1)));
     for (const d of this.all) {
       const duck = d.duck;
       switch (d.state) {
@@ -134,7 +135,7 @@ export class Parade {
           break;
         }
         case 'following': {
-          const target = mother.anchorX - spacing * d.slot;
+          const target = mother.anchorX - P.firstGap - spacing * (d.slot - 1);
           duck.anchorX += (target - duck.anchorX) * Math.min(1, P.follow * h);
           // Reached the spot where the mother jumped? Then jump after this duckling's extra lag.
           while (d.jumps.length && distance >= d.jumps[0].distance + d.jumps[0].x - duck.x) {

@@ -6,11 +6,19 @@ export const CONFIG = {
   view: {
     /** Logical reference resolution. */
     refWidth: 1280,
-    refHeight: 720,
+    /** Visible gameplay height in world units — lower zooms in (bigger duck, less empty sky). */
+    refHeight: 660,
     /** On narrow/portrait screens we zoom out so at least this much world width is visible. */
     minViewWidth: 900,
-    /** Duck's horizontal position as a fraction of the visible width. */
-    duckScreenX: 0.27,
+    /**
+     * Duck's horizontal position as a fraction of the visible width: further right on wide screens
+     * (room for the duckling parade), further left on narrow ones (enough look-ahead at top speed).
+     */
+    duckScreenXNarrow: 0.27,
+    duckScreenXWide: 0.33,
+    /** View widths (world units) between which the duck position blends from narrow to wide. */
+    narrowViewWidth: 900,
+    wideViewWidth: 1150,
     /**
      * On tall screens, the water below the surface fills at least this fraction of the view, so the
      * water line sits low (≈75% down) and the centred menu stays clear of the duck.
@@ -121,9 +129,11 @@ export const CONFIG = {
      * competes with obstacles.
      */
     layers: [
-      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 150, gap: 160, sink: 8, parallax: 0.025 },
-      { key: 'bg-rocks', file: 'bg-rocks.webp', height: 115, gap: 160, sink: 8, parallax: 0.06 },
-      { key: 'bg-palms', file: 'bg-palms.webp', height: 195, gap: 240, sink: 8, parallax: 0.12 },
+      // High, sparse clouds fill the upper sky (`baseline` = world y of the layer's bottom edge).
+      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 95, gap: 640, baseline: 230, alpha: 0.75, parallax: 0.012 },
+      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 200, gap: 120, sink: 8, parallax: 0.025 },
+      { key: 'bg-rocks', file: 'bg-rocks.webp', height: 165, gap: 150, sink: 8, parallax: 0.06 },
+      { key: 'bg-palms', file: 'bg-palms.webp', height: 270, gap: 220, sink: 8, parallax: 0.12 },
     ],
   },
 
@@ -359,9 +369,14 @@ export const CONFIG = {
     size: 0.68,
     /** Placeholder colouring until the duckling art arrives. */
     tint: 0xfff3b0,
-    /** Gap between ducklings; shrinks on narrow screens so a full parade stays on screen. */
-    spacing: 52,
-    minSpacing: 34,
+    /**
+     * Centre-to-centre distances. The first duckling sits clear of the mother's tail (her back edge
+     * is ~57 units behind her centre, a duckling's beak ~37 ahead of its centre). Between ducklings
+     * the gap shrinks on narrow screens so a full parade stays on screen.
+     */
+    firstGap: 90,
+    spacing: 62,
+    minSpacing: 40,
     /** Extra jump delay per place in line (s). 6 × 18 ms still leaves a ≥ 121 ms window for everyone. */
     extraLag: 0.018,
     /** How quickly followers slide into their slot (1/s). */

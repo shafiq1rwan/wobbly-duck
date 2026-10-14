@@ -11,6 +11,7 @@ interface Layer {
   images: Phaser.GameObjects.Image[];
   y: number;
   scale: number;
+  alpha: number;
   /** Distance between repeats (image width + gap), world units. */
   period: number;
   parallax: number;
@@ -51,7 +52,8 @@ export class Background {
         key: spec.key,
         depth: depth + 1 + i,
         images: [],
-        y: CONFIG.water.restY + spec.sink - spec.height,
+        y: ('baseline' in spec ? spec.baseline : CONFIG.water.restY + spec.sink) - spec.height,
+        alpha: 'alpha' in spec ? spec.alpha : 1,
         scale,
         period: source.width * scale + spec.gap,
         parallax: spec.parallax,
@@ -77,7 +79,7 @@ export class Background {
       const needed = Math.ceil(view.width / layer.period) + 1;
       while (layer.images.length < needed) {
         layer.images.push(
-          layer.scene.add.image(0, layer.y, layer.key).setOrigin(0).setScale(layer.scale).setDepth(layer.depth),
+          layer.scene.add.image(0, layer.y, layer.key).setOrigin(0).setScale(layer.scale).setAlpha(layer.alpha).setDepth(layer.depth),
         );
       }
       layer.images.forEach((img, i) => {
