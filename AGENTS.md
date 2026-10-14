@@ -85,7 +85,6 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
   `python tools/optimize-images.py` — it writes WebPs to `public/assets/`. Never copy raw PNGs into
   `public/`. Load files in `BootScene.preload` with `` `${import.meta.env.BASE_URL}assets/<file>` ``
   and add a matching `<link rel="preload" as="image">` in `index.html`.
-- The loading screen is inline HTML/CSS in `index.html`; progress comes from `src/ui/loader.ts`.
 - Use transparent PNGs with real alpha. A strip on a white background can be converted with
   `python tools/process-duck-strip.py <strip.png> <out_dir>`.
 - **Never put notes or docs in `public/`** — Vite copies the whole folder into the build.

@@ -14,59 +14,10 @@
     <link rel="preload" as="image" href="./assets/bg-palms.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/bg-rocks.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/bg-clouds.webp" type="image/webp" />
-    <!-- Critical loading-screen styles, inline so it paints before any CSS/JS arrives. -->
-    <style>
-      #loader {
-        position: fixed;
-        inset: 0;
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 28px;
-        background: linear-gradient(#3ac3fd, #bdebfd);
-        transition: opacity 0.25s ease-out;
-      }
-      #loader.done {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .loader-title {
-        font: 700 clamp(44px, 10vmin, 84px) / 0.9 'Fredoka', 'Trebuchet MS', 'Arial Rounded MT Bold', sans-serif;
-        text-align: center;
-        text-transform: uppercase;
-        color: #fff;
-        transform: rotate(-3deg);
-        text-shadow:
-          0 -4px #13266a, 3px -3px #13266a, 4px 0 #13266a, 3px 3px #13266a, 0 4px #13266a, -3px 3px #13266a,
-          -4px 0 #13266a, -3px -3px #13266a, 0 7px #13266a;
-      }
-      .loader-title span {
-        color: #ffd93f;
-      }
-      .loader-bar {
-        width: min(240px, 60vw);
-        height: 18px;
-        padding: 3px;
-        border: 3px solid #13266a;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.6);
-      }
-      #loader-fill {
-        width: 8%;
-        height: 100%;
-        border-radius: 999px;
-        background: #ffd93f;
-        transition: width 0.2s ease-out;
-      }
-    </style>
+    <!-- Sky colour for the first paint, before CSS and the game canvas arrive. -->
+    <style>html { background: #3ac3fd; }</style>
   </head>
   <body>
-    <div id="loader" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100">
-      <div class="loader-title">Wobbly<br /><span>Duck</span></div>
-      <div class="loader-bar"><div id="loader-fill"></div></div>
-    </div>
 
     <!-- Icons (Phosphor, MIT) are injected as an SVG sprite by src/ui/icons.ts; use <use href="#i-…">. -->
     <div id="game"></div>

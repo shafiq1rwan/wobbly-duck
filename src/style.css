@@ -460,7 +460,9 @@ button {
   letter-spacing: 0.01em;
   text-transform: uppercase;
   transform: rotate(-3deg);
-  text-shadow: var(--o5), 0 7px 0 var(--ink);
+  text-shadow: var(--o5);
+  /* Drop shadow of the outlined text, so its edges stay rounded too. */
+  filter: drop-shadow(0 4px 0 var(--ink));
 }
 
 .logo-top {
@@ -548,10 +550,13 @@ button {
 /* ---------------------------------------------------------------- small screens */
 
 @media (max-width: 600px), (max-height: 500px) {
-  /* Thinner outlines for the smaller title and logo. */
-  .title,
-  .logo {
+  /* Thinner outlines for the smaller card titles and logo. */
+  .title {
     text-shadow: var(--o3), 0 5px 0 var(--ink);
+  }
+  .logo {
+    text-shadow: var(--o3);
+    filter: drop-shadow(0 3px 0 var(--ink));
   }
   .icon-btn {
     width: 46px;
