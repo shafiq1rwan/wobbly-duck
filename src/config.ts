@@ -126,15 +126,31 @@ export const CONFIG = {
      * baseline (built from assets-src/ by tools/optimize-images.py).
      * `height` is the drawn height in world units, `gap` the empty space between repeats, and the
      * bottom sits `sink` units below the water line. Keep scenery small and sparse so it never
-     * competes with obstacles.
+     * competes with obstacles. `lake` is the same layer in the lake biome (loaded after boot).
      */
     layers: [
       // High, sparse clouds fill the upper sky (`baseline` = world y of the layer's bottom edge).
-      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 95, gap: 640, baseline: 230, alpha: 0.75, parallax: 0.012 },
-      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 200, gap: 120, sink: 8, parallax: 0.025 },
-      { key: 'bg-rocks', file: 'bg-rocks.webp', height: 165, gap: 150, sink: 8, parallax: 0.06 },
-      { key: 'bg-palms', file: 'bg-palms.webp', height: 270, gap: 220, sink: 8, parallax: 0.12 },
+      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 95, gap: 640, baseline: 230, alpha: 0.75, parallax: 0.012,
+        lake: { key: 'bg-lake-clouds', file: 'bg-lake-clouds.webp', height: 103 } },
+      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 200, gap: 120, sink: 8, parallax: 0.025,
+        lake: { key: 'bg-lake-clouds', file: 'bg-lake-clouds.webp', height: 216 } },
+      { key: 'bg-rocks', file: 'bg-rocks.webp', height: 165, gap: 150, sink: 8, parallax: 0.06,
+        lake: { key: 'bg-lake-mountains', file: 'bg-lake-mountains.webp', height: 190 } },
+      { key: 'bg-palms', file: 'bg-palms.webp', height: 270, gap: 220, sink: 8, parallax: 0.12,
+        lake: { key: 'bg-lake-pines', file: 'bg-lake-pines.webp', height: 280 } },
     ],
+  },
+
+  /**
+   * Lake biome. Every run starts on the tropical sea; from `fromMetres` the lake scenery scrolls in
+   * from the right (each parallax layer at its own pace) while the sky and water colours blend from
+   * the tropical palette to these over `blendMetres`.
+   */
+  lake: {
+    fromMetres: 450,
+    blendMetres: 150,
+    sky: { top: 0x67cdf2, horizon: 0xe0f7f4 },
+    water: { oceanColor: 0x2ec4c6, deepColor: 0x1aa6b4, color: 0x4cc9c8, highlightColor: 0xdafcf2 },
   },
 
   duck: {

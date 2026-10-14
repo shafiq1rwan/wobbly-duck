@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import type { ViewBounds } from '../core/Viewport';
+import { lerpColor } from './Background';
 
 interface Wave {
   amplitude: number;
@@ -26,6 +27,14 @@ export class Water {
   /** Translucent tint + surface highlight in front of them. */
   private readonly front: Phaser.GameObjects.Graphics;
   private heights = new Float32Array(256);
+  /** Current colours: the tropical palette blended towards the lake one (setBlend). */
+  private readonly colors = {
+    oceanColor: CONFIG.water.oceanColor as number,
+    deepColor: CONFIG.water.deepColor as number,
+    color: CONFIG.water.color as number,
+    highlightColor: CONFIG.water.highlightColor as number,
+  };
+  private blend = 0;
 
   private readonly rippleH: Float32Array;
   private readonly rippleV: Float32Array;
@@ -55,6 +64,16 @@ export class Water {
   reset(): void {
     this.time = 0;
     this.scroll = 0;
+  }
+
+  /** Water colours: 0 = tropical sea, 1 = lake. */
+  setBlend(t: number): void {
+    if (t === this.blend) return;
+    this.blend = t;
+    const lake = CONFIG.lake.water;
+    for (const k of Object.keys(this.colors) as (keyof typeof this.colors)[]) {
+      this.colors[k] = lerpColor(CONFIG.water[k], lake[k], t);
+    }
   }
 
   update(dt: number, worldDx: number): void {
@@ -152,16 +171,17 @@ export class Water {
     const bottom = view.bottom + 20;
 
     // Behind: opaque ocean, plus a deeper band that follows the surface softly (depth without gradients).
+    const c = this.colors;
     const b = this.back;
     b.clear();
-    this.fillBelow(b, w.oceanColor, 1, x0, count, bottom, 0, 1);
-    this.fillBelow(b, w.deepColor, 1, x0, count, bottom, 70, 0.4);
+    this.fillBelow(b, c.oceanColor, 1, x0, count, bottom, 0, 1);
+    this.fillBelow(b, c.deepColor, 1, x0, count, bottom, 70, 0.4);
 
     // In front: light tint over submerged parts, then the surface highlight.
     const f = this.front;
     f.clear();
-    this.fillBelow(f, w.color, w.alpha, x0, count, bottom, 0, 1);
-    f.fillStyle(w.highlightColor, 1);
+    this.fillBelow(f, c.color, w.alpha, x0, count, bottom, 0, 1);
+    f.fillStyle(c.highlightColor, 1);
     f.beginPath();
     f.moveTo(x0, hs[0] - 1);
     for (let i = 1; i < count; i++) f.lineTo(x0 + i * step, hs[i] - 1);

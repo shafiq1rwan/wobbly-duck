@@ -110,7 +110,8 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
 - Don't change the active look — background layers, water/sky colours, palette, duck, UI style —
   unless the project owner asked for that change. Deliver new or alternative art as **unused**
   assets (sources in `assets-src/`, a note in `docs/assets/`, a row in `docs/ASSET_LOG.md`) and let
-  the owner decide. The current scenery is clouds + distant rocks + palm islands over blue ocean.
+  the owner decide. The current scenery is clouds + distant rocks + palm islands over blue ocean; from 450 m each run
+  drifts into a lake biome (pine islands, green mountains, teal water — `CONFIG.lake`).
 - Art-only tasks shouldn't edit game code; integration happens separately.
 
 ## Known gotchas

@@ -74,6 +74,8 @@ export class GameScene extends Phaser.Scene {
   private revived = false;
   private adPlaying = false;
   private graceTime = 0;
+  /** The run has started changing into the lake biome. */
+  private lakeStarted = false;
   private dashMeter!: DashMeter;
   private readonly shake = new CameraShake();
   private audio!: AudioManager;
@@ -165,6 +167,7 @@ export class GameScene extends Phaser.Scene {
 
     this.duck.reset(this.water);
     this.showSkin(this.skins.equipped);
+    this.loadLakeArt();
     this.toMenu();
     platform.loadingFinished();
   }
@@ -200,6 +203,7 @@ export class GameScene extends Phaser.Scene {
     this.ui.setShopDot(this.skins.canAffordNew(this.scoreBank));
     this.ui.setHintVisible(this.runs === 0);
     this.marker.hide();
+    this.resetBiome();
     this.speed = CONFIG.world.menuSpeed;
     this.setState('menu');
   }
@@ -218,6 +222,7 @@ export class GameScene extends Phaser.Scene {
     if (this.runs < 3) this.spawner.reset(this.worldDistance, [null, 'lily-bounce', null, 'sky-arc']);
     this.spawner.active = true;
     this.runStart = this.worldDistance;
+    this.resetBiome();
     this.marker.start(this.runStart, this.best);
     this.recordToBeat = this.bestScore;
     this.recordCelebrated = false;
@@ -303,6 +308,37 @@ export class GameScene extends Phaser.Scene {
     this.ui.setMenuBank(this.scoreBank);
     this.setState('gameover');
     if (stillPlaying) platform.gameplayStopped();
+  }
+
+  // ------------------------------------------------------------------ biomes
+
+  /** Lake scenery isn't needed for the first ~450 m, so it loads after boot instead of delaying it. */
+  private loadLakeArt(): void {
+    const base = `${import.meta.env.BASE_URL}assets/`;
+    for (const spec of CONFIG.background.layers) {
+      if (!this.textures.exists(spec.lake.key)) this.load.image(spec.lake.key, base + spec.lake.file);
+    }
+    this.load.start();
+  }
+
+  private resetBiome(): void {
+    this.lakeStarted = false;
+    this.background.resetBiome();
+    this.water.setBlend(0);
+  }
+
+  /** Drifts from the tropical sea into the lake as the run goes on. */
+  private updateBiome(): void {
+    if (this.state === 'menu') return;
+    const L = CONFIG.lake;
+    const metres = this.runMetres();
+    if (metres < L.fromMetres) return;
+    if (!this.lakeStarted) this.lakeStarted = this.background.startLake(this.view);
+    if (!this.lakeStarted) return; // lake art still loading: try again next frame
+    const t = Math.min(1, (metres - L.fromMetres) / L.blendMetres);
+    const eased = t * t * (3 - 2 * t);
+    this.background.setBlend(eased);
+    this.water.setBlend(eased);
   }
 
   // ------------------------------------------------------------------ revive (one rewarded ad per run)
@@ -513,6 +549,7 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < steps; i++) this.step(h);
     this.marker.update(dt, this.worldDistance, this.duck.anchorX, this.duck.x, this.water, this.view);
     this.confetti.update(dt, this.view);
+    this.updateBiome();
 
     this.duckEffects(dt);
     this.duckView.sync(this.duck, dt);

@@ -62,6 +62,10 @@ MANIFEST = [
     ('parallax-no-outline-v2/clouds.png', 'bg-clouds.webp', (485, 752), 300, 85),
     ('parallax-no-outline-v2/distant-rocks.png', 'bg-rocks.webp', (427, 662), 240, 85),
     ('parallax-no-outline-v2/palm-islands.png', 'bg-palms.webp', (303, 756), 400, 85),
+    # Lake biome (the run drifts into it): alpine clouds and pine islands, green-lake mountains.
+    ('parallax-alpine-lake-v1/clouds.png', 'bg-lake-clouds.webp', (448, 737), 320, 85),
+    ('parallax-green-lake-v1/distant-mountains.png', 'bg-lake-mountains.webp', (395, 671), 280, 85),
+    ('parallax-alpine-lake-v1/pine-islands.png', 'bg-lake-pines.webp', (259, 766), 430, 85),
     ('river-background-v1/willow-banks.png', 'bg-river-willows.webp', (470, 748), 320, 85),
     ('river-background-v1/reed-banks.png', 'bg-river-reeds.webp', (322, 689), 160, 85),
 ]
