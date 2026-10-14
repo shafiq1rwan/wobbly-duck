@@ -12,6 +12,9 @@ const KEY_ACTIONS: Record<string, Action> = {
   KeyP: 'pause',
 };
 
+/** Keys that would scroll the portal's page around the game: always swallowed. */
+const SCROLL_KEYS = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End']);
+
 /**
  * Engine-independent input: keyboard on the window, taps on the game canvas — left half jumps,
  * right half dashes (like Cookie Run). Taps fire on touch-down, each finger on its own, so both
@@ -28,6 +31,8 @@ export class InputManager {
     // Block page scroll / pull-to-refresh / pinch while touching the game.
     document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     document.addEventListener('gesturestart', (e) => e.preventDefault());
+    // The mouse wheel must not scroll the page either (the shop list scrolls itself, see UI.ts).
+    window.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
   }
 
   /** Returns the actions received since the last call. The returned array is reused. */
@@ -48,6 +53,7 @@ export class InputManager {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
+    if (SCROLL_KEYS.has(e.code)) e.preventDefault();
     const action = KEY_ACTIONS[e.code];
     if (!action) return;
     // Also stops Space/Enter from activating a focused button and arrows from scrolling.

@@ -110,10 +110,28 @@ acceptable before shipping it.
 | First duckling rescued | Most players | Make lost ducklings more visible, earlier hint |
 | Mute rate | Low | Softer, less repetitive sounds |
 
-## Implementation notes (Phase 5)
+## Implementation (done)
 
-- Add `measure(category, what, action)` to the `Platform` interface; the local adapter logs to the
-  console when `?debug` is on, the Poki adapter forwards to `PokiSDK.measure`.
-- A small `Analytics` helper in gameplay code tracks active playtime (only while `playing`),
-  milestone flags (so each fires once), and the run counter, and calls `platform.measure`.
-- Test with the Poki Inspector's event log before going live.
+`src/game/Analytics.ts` owns the events and their once-per-session / once-per-run rules; gameplay
+code only reports what happened. It calls `platform.measure`, which goes to `PokiSDK.measure` in the
+Poki build and is logged to the console (`[measure] …`) locally with `?debug`. Values never contain
+`/` or `^` (reserved by Poki), and ads themselves are not measured (the SDK tracks breaks).
+
+Events actually sent — trimmed to seven groups (some names differ slightly from the plan above,
+to use Poki's recommended `button` / `cosmetic` / `rewarded` categories):
+
+| # | Event | When | Answers |
+| --- | --- | --- | --- |
+| 1 | `session`, `1min` / `3min` / `5min` / `10min` / `20min`, `reached` | Active play time this session (playing only) | Who plays 3+ / 5+ minutes |
+| 2 | `run`, `1`…`5` / `6-10` / `11+`, `start` → `fail` | Every run (a revive continues the same run) | Do they play again? |
+| 3 | `distance`, `100m` / `250m` / `500m` / `1000m` / `2000m`, `reached` | Once per run | Difficulty cliffs |
+| 4 | `death`, `log` / `rock` / `crate`, `hit` | Every crash | Which obstacle to re-tune |
+| 5 | `gameover`, `play-again` / `home`, `visible` → `interact` | Game-over buttons | Restart vs leave |
+| 6 | `button`, `shop`, `visible` → `interact`; `cosmetic`, `<skin id>`, `unlocked` | Menu shown → shop opened; skin bought | Is the shop used, which skins sell |
+| 7 | `rewarded`, `revive`, `visible` → `interact` / `skip` / `timeout` | Revive offer (the ad itself is tracked by the SDK) | Revive take-up |
+
+Dropped for now (tutorial, duckling parade, crate smash, lake, best, pause/sound): add them back
+to `Analytics.ts` if a question comes up that they answer.
+
+Also not implemented: section 6 (returning players), which needs Poki's OK on using local storage that way.
+Test with the Poki Inspector's event log before going live.

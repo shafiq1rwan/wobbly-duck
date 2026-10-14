@@ -1,9 +1,11 @@
+import { PokiPlatform } from './PokiPlatform';
+
 /**
  * Platform adapter. Gameplay code only talks to this interface, never to a portal SDK directly.
  *
- * The local implementation does nothing, so the game runs standalone during development.
- * In Phase 5 a portal adapter (e.g. Poki) will implement these hooks using the official
- * SDK documentation — the method names here are our own, not the SDK's.
+ * The local implementation does nothing (and fakes ads), so the game runs standalone during
+ * development. `vite build --mode poki` selects PokiPlatform, which implements these hooks with the
+ * official Poki HTML5 SDK — the method names here are our own, not the SDK's.
  */
 export interface Platform {
   init(): Promise<void>;
@@ -14,10 +16,17 @@ export interface Platform {
   /** A run has ended or been paused (menus, game over). */
   gameplayStopped(): void;
   /**
-   * Plays a rewarded ad (the player chose to watch one, e.g. to revive). Resolves true if the reward
-   * was earned. Call it with gameplay stopped; the game mutes its own audio while it runs.
+   * A chance for an ad before returning to gameplay (run start, resume). The portal decides whether
+   * one shows; `onStart` runs only if it does (mute audio there). Resolves when the game may go on.
    */
-  rewardedBreak(): Promise<boolean>;
+  commercialBreak(onStart: () => void): Promise<void>;
+  /**
+   * Plays a rewarded ad (the player chose to watch one, e.g. to revive). `onStart` runs when the ad
+   * starts (mute audio). Resolves true if the reward was earned. Call it with gameplay stopped.
+   */
+  rewardedBreak(onStart: () => void): Promise<boolean>;
+  /** A Game Event for the portal's dashboard (see src/game/Analytics.ts). */
+  measure(category: string, what: string, action: string): void;
 }
 
 class LocalPlatform implements Platform {
@@ -26,8 +35,16 @@ class LocalPlatform implements Platform {
   gameplayStarted(): void {}
   gameplayStopped(): void {}
 
+  async commercialBreak(): Promise<void> {}
+
+  /** Game Events are only logged locally, with `?debug`. */
+  measure(category: string, what: string, action: string): void {
+    if (new URLSearchParams(window.location.search).has('debug')) console.info('[measure]', category, what, action);
+  }
+
   /** Stand-in for an ad so the revive flow can be played locally: a short placeholder, always rewarded. */
-  rewardedBreak(): Promise<boolean> {
+  rewardedBreak(onStart: () => void): Promise<boolean> {
+    onStart();
     return new Promise((resolve) => {
       const el = document.createElement('div');
       el.textContent = 'Ad placeholder';
@@ -43,4 +60,4 @@ class LocalPlatform implements Platform {
   }
 }
 
-export const platform: Platform = new LocalPlatform();
+export const platform: Platform = import.meta.env.MODE === 'poki' ? new PokiPlatform() : new LocalPlatform();

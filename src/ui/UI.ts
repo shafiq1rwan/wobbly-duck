@@ -292,6 +292,10 @@ export class UI {
     };
 
     v.addEventListener('scroll', () => this.updateShopScroll());
+    // The page-wide wheel block (InputManager) also stops native scrolling here, so scroll by hand.
+    v.addEventListener('wheel', (e) => {
+      v.scrollTop += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    });
     v.addEventListener(
       'pointerdown',
       (e) => {

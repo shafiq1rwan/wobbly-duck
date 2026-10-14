@@ -12,6 +12,11 @@ import { installIcons } from './ui/icons';
 import { GameScene } from './scenes/GameScene';
 
 installIcons();
+// Build version on the menu (for bug reports) and in the console.
+document.getElementById('version')!.textContent = `v${__APP_VERSION__}`;
+console.info(`Wobbly Duck v${__APP_VERSION__}`);
+// Poki allows a studio logo on the loading screen only, so the in-game credit stays out of that build.
+if (import.meta.env.MODE === 'poki') document.getElementById('credit')?.remove();
 
 function start(): void {
   const { width, height } = computeRenderSize();

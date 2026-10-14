@@ -491,6 +491,20 @@ button {
   gap: clamp(12px, 2.4vh, 22px);
 }
 
+/* Build version: tiny and faint in the menu's bottom-right corner. */
+.version {
+  position: absolute;
+  right: calc(var(--safe-right) + 12px);
+  bottom: calc(var(--safe-bottom) + 8px);
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--white);
+  opacity: 0.55;
+  text-shadow: 0 1px 2px rgba(19, 38, 106, 0.5);
+  pointer-events: none;
+}
+
 #menu-hint {
   position: absolute;
   left: 0;
@@ -703,6 +717,57 @@ button {
   100% {
     opacity: 0;
     transform: translateX(-50%) translateY(14px);
+  }
+}
+
+/* Desktop controls during play, bottom centre (touch screens get the JUMP / DASH labels instead). */
+.controls-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + 30px); /* just above the credit */
+  margin: 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+  text-shadow: 0 1px 2px rgba(19, 38, 106, 0.6);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.controls-hint kbd {
+  display: inline-block;
+  min-width: 1.75em;
+  margin: 0 2px;
+  padding: 0 5px 1px;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  text-shadow: none;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-bottom-width: 4px;
+  border-radius: 6px;
+}
+
+.controls-sep {
+  margin: 0 12px;
+  opacity: 0.7;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .controls-hint {
+    display: none;
+  }
+}
+
+/* On desktop the tip card sits above the controls line. */
+@media not ((hover: none) and (pointer: coarse)) {
+  .toast {
+    bottom: calc(var(--safe-bottom) + 66px);
   }
 }
 
@@ -1102,23 +1167,23 @@ button {
 }
 
 .revive-note {
-  margin: -4px 0 0;
-  font-size: clamp(13px, 3.4vmin, 15px);
+  margin: 0;
+  font-size: clamp(14px, 3.4vmin, 16px);
   font-weight: 500;
   color: var(--white);
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
-.text-btn {
-  align-self: center;
-  padding: 4px 10px;
-  background: none;
-  font-size: clamp(15px, 4vmin, 18px);
-  font-weight: 600;
-  color: var(--white);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  opacity: 0.85;
+/* Standard option: same size as the reward button (Poki rule), so not the narrow icon button. */
+.btn-secondary.btn-skip {
+  width: auto;
+  padding: 0 clamp(10px, 3vmin, 18px);
+}
+
+/* Reward button: a prominent video icon. */
+.btn-reward .icon {
+  width: calc(var(--btn-icon) * 1.35);
+  height: calc(var(--btn-icon) * 1.35);
 }
 
 /* ---------------------------------------------------------------- stats */

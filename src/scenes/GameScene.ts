@@ -6,6 +6,7 @@ import { InputManager } from '../core/InputManager';
 import { loadNumber, saveNumber } from '../core/Storage';
 import { frameCamera, type ViewBounds } from '../core/Viewport';
 import { Background } from '../game/Background';
+import { Analytics } from '../game/Analytics';
 import { BestMarker } from '../game/BestMarker';
 import { CameraShake } from '../game/CameraShake';
 import { Confetti } from '../game/Confetti';
@@ -28,7 +29,8 @@ type State = 'menu' | 'playing' | 'paused' | 'crashed' | 'revive' | 'gameover';
 
 /** Background uses 0–4 (sky + parallax layers); the ocean body sits behind obstacles, the water tint in front. */
 const DEPTH = { background: 0, waterBack: 5, marker: 7, pads: 9, obstacles: 10, frogs: 11, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, confetti: 38, debug: 100 };
-const DEBUG = new URLSearchParams(window.location.search).has('debug');
+/** `?debug` draws hit boxes and exposes the scene; never in the Poki build (no dev tools allowed). */
+const DEBUG = import.meta.env.MODE !== 'poki' && new URLSearchParams(window.location.search).has('debug');
 /** Ignore restart input for a moment after the game-over screen appears (prevents mash-restarts). */
 const RESTART_LOCKOUT = 0.35;
 /** Picks a kernel for a pattern role, by the weights in CONFIG.food.roles. */
@@ -61,6 +63,7 @@ export class GameScene extends Phaser.Scene {
   private pads!: LilyPads;
   private popups!: ScorePopups;
   private marker!: BestMarker;
+  private readonly analytics = new Analytics();
   private confetti!: Confetti;
   /** Best score when the run started, and whether beating it has been celebrated yet. */
   private recordToBeat = 0;
@@ -136,7 +139,10 @@ export class GameScene extends Phaser.Scene {
     this.controls = new InputManager(this.game.canvas);
     this.ui = new UI({
       onPlay: () => this.startRun(),
-      onShop: () => this.openShop(),
+      onShop: () => {
+        this.analytics.shopOpened();
+        this.openShop();
+      },
       onShopBack: () => this.closeShop(),
       onShopPick: (id) => this.pickSkin(id),
       onShopAction: () => this.shopAction(),
@@ -144,8 +150,14 @@ export class GameScene extends Phaser.Scene {
       onReviveSkip: () => this.skipRevive(),
       onPause: () => this.pause(),
       onResume: () => this.resume(),
-      onRestart: () => this.startRun(),
-      onHome: () => this.goHome(),
+      onRestart: () => {
+        if (this.state === 'gameover') this.analytics.gameOverButton('play-again');
+        this.startRun();
+      },
+      onHome: () => {
+        if (this.state === 'gameover') this.analytics.gameOverButton('home');
+        this.goHome();
+      },
       onToggleSound: () => this.toggleSound(),
       onButton: () => this.audio.play('click'),
     });
@@ -206,9 +218,27 @@ export class GameScene extends Phaser.Scene {
     this.resetBiome();
     this.speed = CONFIG.world.menuSpeed;
     this.setState('menu');
+    this.analytics.menuShown();
   }
 
+  /** Every way into a run passes a commercial break first (the portal decides whether an ad shows). */
   private startRun(): void {
+    this.afterBreak(() => this.beginRun());
+  }
+
+  /** Offers the portal an ad break, muted and with input ignored while it plays, then continues. */
+  private afterBreak(then: () => void): void {
+    if (this.adPlaying) return;
+    this.adPlaying = true;
+    void platform.commercialBreak(() => this.audio.setAdPlaying(true)).then(() => {
+      this.adPlaying = false;
+      this.audio.setAdPlaying(false);
+      this.controls.clear();
+      then();
+    });
+  }
+
+  private beginRun(): void {
     if (this.shopOpen) this.closeShop();
     if (this.state !== 'menu') {
       // Restart: fresh duck and clear the river.
@@ -237,6 +267,7 @@ export class GameScene extends Phaser.Scene {
     this.ui.setScore(0);
     this.ui.setParade(0, 'reset');
     saveNumber('runs', ++this.runs);
+    this.analytics.runStarted();
     this.setState('playing');
     if (this.runs <= 3) this.ui.showTouchZones();
     platform.gameplayStarted();
@@ -260,9 +291,11 @@ export class GameScene extends Phaser.Scene {
 
   private resume(): void {
     if (this.state !== 'paused') return;
-    this.controls.clear();
-    this.setState('playing');
-    platform.gameplayStarted();
+    this.afterBreak(() => {
+      if (this.state !== 'paused') return;
+      this.setState('playing');
+      platform.gameplayStarted();
+    });
   }
 
   private toggleSound(): void {
@@ -272,7 +305,8 @@ export class GameScene extends Phaser.Scene {
     this.ui.setMuted(muted);
   }
 
-  private crash(): void {
+  private crash(obstacle: string): void {
+    this.analytics.crashed(obstacle);
     this.duck.kill();
     this.crashDecel = Math.max(CONFIG.world.crashDecel, this.speed / (CONFIG.gameOverDelay * 0.7));
     this.duckView.onHurt();
@@ -308,6 +342,7 @@ export class GameScene extends Phaser.Scene {
     this.ui.setMenuBank(this.scoreBank);
     this.setState('gameover');
     if (stillPlaying) platform.gameplayStopped();
+    this.analytics.runEnded();
   }
 
   // ------------------------------------------------------------------ biomes
@@ -350,15 +385,16 @@ export class GameScene extends Phaser.Scene {
   private offerRevive(): void {
     this.ui.showRevive(this.score);
     this.setState('revive');
+    this.analytics.reviveOffered();
     platform.gameplayStopped();
   }
 
   private watchReviveAd(): void {
     if (this.state !== 'revive' || this.adPlaying) return;
+    this.analytics.reviveChosen();
     this.adPlaying = true;
     this.ui.setReviveBusy(true);
-    this.audio.setAdPlaying(true);
-    void platform.rewardedBreak().then((rewarded) => {
+    void platform.rewardedBreak(() => this.audio.setAdPlaying(true)).then((rewarded) => {
       this.adPlaying = false;
       this.audio.setAdPlaying(false);
       if (this.state !== 'revive') return;
@@ -368,7 +404,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private skipRevive(): void {
-    if (this.state === 'revive' && !this.adPlaying) this.showGameOver();
+    if (this.state !== 'revive' || this.adPlaying) return;
+    this.analytics.reviveDeclined(false);
+    this.showGameOver();
   }
 
   /** Back in the water where the duck crashed: river ahead cleared, a moment of invulnerability. */
@@ -393,6 +431,7 @@ export class GameScene extends Phaser.Scene {
     this.water.disturb(this.duck.x, 160, 60);
     this.splashes.sparkle(this.duck.x, this.duck.y, 14, [0xffffff, 0xfff3b0, 0xffe45c]);
     this.audio.play('revive');
+    this.ui.showToast('Revived! Keep going!', 2, 'info');
     platform.gameplayStarted();
   }
 
@@ -442,6 +481,7 @@ export class GameScene extends Phaser.Scene {
     this.skins.equip(id);
     this.refreshShop();
     this.celebrateUnlock(id);
+    this.analytics.skinUnlocked(id);
   }
 
   /** Every unlock: confetti in the skin's own colours bursts from the duck, which hops and flips. */
@@ -501,6 +541,10 @@ export class GameScene extends Phaser.Scene {
   // ------------------------------------------------------------------ input
 
   private handleInput(): void {
+    if (this.adPlaying) {
+      this.controls.consume(); // no input while an ad plays (or is being requested)
+      return;
+    }
     for (const action of this.controls.consume()) {
       switch (this.state) {
         case 'menu':
@@ -523,7 +567,10 @@ export class GameScene extends Phaser.Scene {
           if (action === 'pause' || action === 'confirm') this.resume();
           break;
         case 'gameover':
-          if (action === 'confirm' && this.stateTime > RESTART_LOCKOUT) this.startRun();
+          if (action === 'confirm' && this.stateTime > RESTART_LOCKOUT) {
+            this.analytics.gameOverButton('play-again');
+            this.startRun();
+          }
           break;
       }
     }
@@ -564,6 +611,7 @@ export class GameScene extends Phaser.Scene {
     this.applyShake(dt);
 
     if (this.state === 'playing' || this.state === 'crashed') this.ui.setDistance(this.runMetres());
+    if (this.state === 'playing') this.analytics.tick(dt, this.runMetres());
     if (this.state === 'crashed' && this.stateTime >= CONFIG.gameOverDelay) {
       if (this.canRevive()) this.offerRevive();
       else this.showGameOver();
@@ -577,7 +625,10 @@ export class GameScene extends Phaser.Scene {
     this.stateTime += dt;
     const left = 1 - this.stateTime / CONFIG.revive.offerSeconds;
     this.ui.setReviveTimer(left);
-    if (left <= 0) this.showGameOver();
+    if (left <= 0) {
+      this.analytics.reviveDeclined(true);
+      this.showGameOver();
+    }
   }
 
   private step(h: number): void {
@@ -617,7 +668,7 @@ export class GameScene extends Phaser.Scene {
     const hit = this.obstacles.hitTest(this.duck.collider);
     if (hit) {
       if (CONFIG.obstacles.types[hit.type].breakable && this.duck.canSmash) this.smash(hit);
-      else if (this.graceTime <= 0) this.crash(); // just revived: swim through
+      else if (this.graceTime <= 0) this.crash(hit.type); // just revived: swim through
     }
     this.food.collect(this.duck.collider, this.onPickup);
   }

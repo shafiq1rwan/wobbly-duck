@@ -125,6 +125,10 @@ the last owned skin picked.
 in the river at the best distance once it is at least `CONFIG.bestMarker.minMetres`. Swimming past it
 shows the toast "New best distance!" with a fanfare and a small confetti fountain.
 
+**Desktop controls line** (HUD, hidden on touch screens): bottom centre just above the credit —
+"Press [W] or [↑] to jump · Press [D] or [→] to dash" with keycap-style keys. On desktop the tip
+card sits above it.
+
 **Tip card** (first-time hints, `UI.showToast`): a light pill card with a navy outline and a yellow
 lightbulb badge, centred low in the water above the credit, never under the score: the sky holds
 jump arcs and sky corn, and the swim lane holds the duck and obstacles. It pops up from below, then

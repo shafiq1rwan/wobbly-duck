@@ -56,6 +56,10 @@
           <svg class="crown"><use href="#i-crown" /></svg>
           <span class="record-text">New Record!</span>
         </div>
+        <!-- Desktop only (hidden on touch screens): keyboard controls at the bottom centre. -->
+        <p class="controls-hint">
+          Press <kbd>W</kbd> or <kbd>↑</kbd> to jump<span class="controls-sep">·</span>Press <kbd>D</kbd> or <kbd>→</kbd> to dash
+        </p>
         <div id="touch-zones" class="touch-zones" aria-hidden="true" hidden>
           <span class="zone">JUMP</span>
           <span class="zone">DASH</span>
@@ -94,6 +98,8 @@
             <span id="shop-dot" class="shop-dot" hidden></span>
           </button>
         </div>
+        <!-- Build version (filled in by main.ts) so bug reports say which build. -->
+        <p id="version" class="version" aria-hidden="true"></p>
         <p id="menu-hint" class="hint">
           <span class="hint-desktop">Space / W / ↑ to jump &nbsp;·&nbsp; D / → to dash</span>
           <span class="hint-touch">Tap left to jump &nbsp;·&nbsp; Tap right to dash</span>
@@ -129,11 +135,14 @@
           <h2 class="title">Keep going?</h2>
           <div class="go-score" id="revive-score">0</div>
           <div class="revive-timer" aria-hidden="true"><div id="revive-bar" class="revive-bar"></div></div>
-          <button id="btn-revive" class="btn btn-primary">
-            <svg class="icon"><use href="#i-ad" /></svg><span id="revive-text">Revive</span>
-          </button>
           <p class="revive-note">Watch a short ad to continue this run</p>
-          <button id="btn-revive-skip" class="text-btn">No thanks</button>
+          <!-- Poki: the standard option is beside the reward button and at least as big. -->
+          <div class="btn-row">
+            <button id="btn-revive-skip" class="btn btn-secondary btn-wide btn-skip"><span>No thanks</span></button>
+            <button id="btn-revive" class="btn btn-primary btn-wide btn-reward">
+              <svg class="icon"><use href="#i-ad" /></svg><span id="revive-text">Revive</span>
+            </button>
+          </div>
         </div>
       </div>
 

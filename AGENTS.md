@@ -30,6 +30,7 @@ npm install
 npm run dev         # http://localhost:5173 (LAN URL is printed for phone testing)
 npm run typecheck   # must pass before you finish
 npm run build       # typecheck + production build into dist/
+npm run build:poki  # Poki build (real SDK, no debug, no credit) into dist-poki/ + wobbly-duck-poki.zip
 ```
 
 Add `?debug` to the URL to draw collision shapes and expose the scene as `window.__scene`.
@@ -44,7 +45,7 @@ index.html               DOM overlay markup (menus, HUD)
 src/main.ts              Phaser game config
 src/config.ts            ALL gameplay tuning (speeds, jump, buoyancy, dash, water, spawning, colours)
 src/core/                Viewport (DPR, resize, camera framing), InputManager, Storage, Audio (Web Audio sfx)
-src/platform/            Portal adapter — no-op locally; Poki SDK goes here in Phase 5
+src/platform/            Portal adapter — LocalPlatform (fake ads) in dev, PokiPlatform in `--mode poki`
 src/art/duckSprite.ts    Duck sheet layout: frame size, pivot, scale, animations
 src/game/                Duck (controller), DuckView (visuals + squash/stretch), Spring, Water (waves +
                          ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
