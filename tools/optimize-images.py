@@ -20,6 +20,14 @@ OUT = os.path.join(ROOT, 'public', 'assets')
 # source, output, crop rows (top, bottom) or None, max height in px or None, WebP quality
 MANIFEST = [
     ('duck-sheet.png', 'duck-sheet.webp', None, None, 90),
+    # Food collectibles: preserve square canvas and centre pivot.
+    ('food-collectibles-v1/corn.png', 'food-corn.webp', None, 96, 90),
+    ('food-collectibles-v1/peas.png', 'food-peas.webp', None, 96, 90),
+    ('food-collectibles-v1/seed.png', 'food-seed.webp', None, 96, 90),
+    # Optional obstacle art with outlines matching each material's colour.
+    ('obstacles-colour-outline-v2/log.png', 'obstacle-log-v2.webp', (233, 515), 64, 90),
+    ('obstacles-colour-outline-v2/box.png', 'obstacle-box-v2.webp', (257, 1067), 160, 90),
+    ('obstacles-colour-outline-v2/mid-air-loop.png', 'obstacle-loop-v2.webp', (118, 1116), 320, 90),
     # Parallax layers: crop to the opaque band (bottom row = art baseline).
     ('parallax-no-outline-v2/clouds.png', 'bg-clouds.webp', (485, 752), 300, 85),
     ('parallax-no-outline-v2/distant-rocks.png', 'bg-rocks.webp', (427, 662), 240, 85),

@@ -42,7 +42,7 @@ function outlined(ctx: CanvasRenderingContext2D, path: () => void, fill: string,
   ctx.beginPath();
   path();
   ctx.lineWidth = width * 2;
-  ctx.strokeStyle = COLORS.outline;
+  ctx.strokeStyle = COLORS.logDark;
   ctx.stroke();
   ctx.fillStyle = fill;
   ctx.fill();

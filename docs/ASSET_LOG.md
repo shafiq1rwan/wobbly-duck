@@ -7,6 +7,8 @@ Generation notes and prompts live in `docs/assets/<folder>/`, never in `public/`
 
 | File | Source | Licence / rights | Notes |
 | --- | --- | --- | --- |
+| `assets-src/obstacles-colour-outline-v2/*.png` → `public/assets/obstacle-*-v2.webp` | Built-in image tool edits of the v1 obstacle art; prompts in `docs/assets/obstacles-colour-outline-v2/README.md` | Project-owned (generated) | Brown outlines for log/crate, golden brown for hoop, as requested. Optional exports; active procedural log also uses its wood-brown outline. |
+| `assets-src/food-collectibles-v1/*.png` → `public/assets/food-*.webp` | Built-in image generation tool; duck-sheet style reference; prompts in `docs/assets/food-collectibles-v1/README.md` | Project-owned (generated) | Corn, peas, sunflower seed. Transparent 96×96 exports; user requested outlines matching each food's colour. Not wired in. |
 | `assets-src/duck-variants-v1/*-sheet.png` | Built-in image generation tool; active duck sheet reference; prompts in `docs/assets/duck-variants-v1/README.md` | Project-owned (generated) | Optional mallard, white Pekin and brown Khaki variants. Six frames, alpha, 2048×256; packed with `tools/pack-duck-variants.py`. Not wired in. |
 | `public/favicon.svg` | Original SVG authored by Codex, based on the active duck spritesheet | Project-owned | Simplified wing, cream belly, orange foot and navy outline for small browser tabs. |
 | `assets-src/duck-sheet.png` → `public/assets/duck-sheet.webp` | Duck strip supplied by the project owner (6 frames, white background), converted with `tools/process-duck-strip.py` | Project-owned | In use. Frames aligned on the eye; layout in `src/art/duckSprite.ts`. |
