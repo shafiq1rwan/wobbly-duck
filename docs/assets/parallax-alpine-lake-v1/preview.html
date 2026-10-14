@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alpine lake environment preview</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:24px;background:#edf6fa;color:#294767;font:16px system-ui}main{max-width:1100px;margin:auto}h1{font-size:24px}p{line-height:1.5}.scene{position:relative;overflow:hidden;aspect-ratio:16/9;border-radius:18px;background:linear-gradient(#b5e7fa,#edfaff 66%,#43bdf0 66%);margin:20px 0}.layer{position:absolute;width:100%;height:100%;object-fit:fill;pointer-events:none}.clouds{top:-21%;opacity:.8}.mountains{top:-4%;opacity:.72}.islands{top:4%;transform:scale(.86)}.water{position:absolute;top:66%;bottom:0;width:100%;background:linear-gradient(#52c8ed,#299fdc);border-top:3px solid #b2f2fb}.water:after{content:'';position:absolute;inset:20px 0;background:repeating-linear-gradient(0deg,transparent 0 39px,#a6ecf738 40px 42px,transparent 43px 65px)}.phone{width:300px;aspect-ratio:390/844;margin:auto}.phone .layer{width:220%;left:-60%;object-fit:fill}.phone .clouds{top:-16%}.phone .mountains{top:0}.phone .islands{top:4%;transform:scale(.9)}label{margin-right:16px;display:inline-block}input{accent-color:#269a94}small{color:#5b7485}
+</style>
+<main>
+<h1>Alpine lake</h1>
+<p>Rounded, outline-free scenery inspired by parallax-no-outline-v2. Unused art option.</p>
+<div><label><input type="checkbox" checked data-layer="clouds"> Clouds</label><label><input type="checkbox" checked data-layer="mountains"> Mountains</label><label><input type="checkbox" checked data-layer="islands"> Pine islands</label></div>
+<div class="scene" aria-label="Desktop environment composition">
+<img class="layer clouds" src="../../../assets-src/parallax-alpine-lake-v1/clouds.png" alt="">
+<img class="layer mountains" src="../../../assets-src/parallax-alpine-lake-v1/distant-mountains.png" alt="">
+<img class="layer islands" src="../../../assets-src/parallax-alpine-lake-v1/pine-islands.png" alt="">
+<div class="water"></div>
+</div>
+<div class="scene phone" aria-label="Portrait composition study">
+<img class="layer clouds" src="../../../assets-src/parallax-alpine-lake-v1/clouds.png" alt="">
+<img class="layer mountains" src="../../../assets-src/parallax-alpine-lake-v1/distant-mountains.png" alt="">
+<img class="layer islands" src="../../../assets-src/parallax-alpine-lake-v1/pine-islands.png" alt="">
+<div class="water"></div>
+</div>
+<p><small>Composition study only. Sky and water are illustrative CSS. Gameplay and parallax integration are separate.</small></p>
+</main>
+<script>document.querySelectorAll('input').forEach(input=>input.addEventListener('change',()=>document.querySelectorAll('.'+input.dataset.layer).forEach(layer=>layer.style.visibility=input.checked?'visible':'hidden')));</script>
+</html>
