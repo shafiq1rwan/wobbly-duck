@@ -51,6 +51,58 @@ export const CONFIG = {
     alpha: 0.28,
     highlightColor: 0xddf8ff,
     highlightThickness: 6,
+
+    /**
+     * Local ripples: a row of spring columns anchored to the world (they scroll with it), added on
+     * top of the sine waves. Kept small and quickly damped so obstacles stay readable.
+     */
+    ripples: {
+      spacing: 12,
+      columns: 384,
+      /** Pull back to flat, wave travel between neighbours, and energy loss. */
+      stiffness: 28,
+      spread: 900,
+      damping: 3.2,
+      maxHeight: 16,
+    },
+  },
+
+  /** Water reactions. Impulses are column velocities (units/s, + = push the surface down). */
+  splash: {
+    swimRippleInterval: 0.32,
+    swimRipple: 26,
+    takeoffRipple: 90,
+    takeoffDrops: 7,
+    landingRipple: 0.32, // × landing speed
+    landingDrops: 16,
+    dashRipple: 60,
+    dashDropsPerSecond: 70,
+    speedLinesPerSecond: 40,
+    dropGravity: 1500,
+    poolSize: 180,
+    dropColors: [0xffffff, 0xd8f6ff, 0xa9e8ff],
+  },
+
+  audio: {
+    masterVolume: 0.7,
+  },
+
+  /**
+   * Subtle camera shake ("trauma" model): events add trauma (0..1), which decays over time; the
+   * offset is maxOffset × trauma², so small events stay tiny and only big ones are noticeable.
+   * Disabled automatically when the player prefers reduced motion.
+   */
+  camera: {
+    shake: {
+      enabled: true,
+      maxOffset: 12,
+      decay: 2.6, // trauma lost per second
+      frequency: 22, // Hz — fast, small jitter
+      landing: 0.4, // × landing strength
+      dash: 0.35,
+      crash: 0.7,
+      crate: 0.4, // Phase 3
+    },
   },
 
   background: {
@@ -118,6 +170,14 @@ export const CONFIG = {
       forwardOffset: 46,
       /** Rate at which the forward nudge returns to 0 (1/s). */
       offsetReturnRate: 4,
+      /** Cooldown meter above the duck: shown while recharging, pops when ready. */
+      meter: {
+        offsetX: -4,
+        offsetY: -66,
+        width: 46,
+        height: 8,
+        readyPop: 0.3, // s
+      },
     },
 
     rotation: {
@@ -133,6 +193,45 @@ export const CONFIG = {
     hurt: {
       popVelocity: 620,
       spin: 7,
+    },
+
+    /**
+     * Visual squash & stretch (DuckView only — never touches the collider). `stretch` > 0 is taller
+     * and thinner, < 0 is squashed and wider; area is preserved. Springs are set by frequency and
+     * damping ratio: lower damping = more wobbles before settling.
+     */
+    jiggle: {
+      /** Main deformation spring (also the "recovery speed"). */
+      wobbleFrequency: 3.4, // Hz
+      wobbleDamping: 0.26, // ≈ 2–3 visible oscillations after an impact
+      maxStretch: 0.3,
+      maxSquash: 0.26,
+      /** Instant squash on takeoff, then this upward kick into a stretch. */
+      jumpSquash: 0.2,
+      jumpKick: 7,
+      /** Stretch while rising (at full jump speed) and while falling (at max fall speed). */
+      riseStretch: 0.16,
+      fallStretch: 0.07,
+      /** Landing squash kick at full landing speed. */
+      landingImpact: 6.5,
+      /** Wide, flat shape while dashing, with a forward lean. */
+      dashStretch: -0.14,
+      dashKick: 3.5,
+      dashLean: 0.1,
+      /** Gentle idle wobble while swimming. */
+      swimWobble: 0.025,
+      swimWobbleFrequency: 1.6, // Hz
+      /** Extra tilt spring layered on the controller's rotation (radians). */
+      tiltFrequency: 2.6,
+      tiltDamping: 0.3,
+      tiltLandingKick: 1.6,
+      tiltMax: 0.3,
+      /** Hurt: squash + tilt kick + short shake. */
+      hurtKick: 7,
+      hurtShake: 5,
+      hurtShakeTime: 0.3,
+      /** Squash pivot below the duck's centre (≈ its waterline), so it compresses into the water. */
+      anchorY: 20,
     },
   },
 

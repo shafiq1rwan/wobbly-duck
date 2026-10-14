@@ -40,11 +40,13 @@ physics: movement and collisions are hand-written.
 index.html               DOM overlay markup (menus, HUD)
 src/main.ts              Phaser game config
 src/config.ts            ALL gameplay tuning (speeds, jump, buoyancy, dash, water, spawning, colours)
-src/core/                Viewport (DPR, resize, camera framing), InputManager, Storage
+src/core/                Viewport (DPR, resize, camera framing), InputManager, Storage, Audio (Web Audio sfx)
 src/platform/            Portal adapter — no-op locally; Poki SDK goes here in Phase 5
 src/art/duckSprite.ts    Duck sheet layout: frame size, pivot, scale, animations
 src/art/textures.ts      Procedural placeholder art (Canvas 2D) — currently the log
-src/game/                Duck (controller), DuckView (visuals), Water, ObstacleManager, Background
+src/game/                Duck (controller), DuckView (visuals + squash/stretch), Spring, Water (waves +
+                         ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
+                         ObstacleManager, Background
 src/scenes/              BootScene (loading), GameScene (state machine + loop)
 src/ui/UI.ts + style.css DOM menus and HUD
 public/assets/           Runtime assets (everything here ships in the build)
@@ -62,7 +64,8 @@ docs/                    Specs and reference images (not shipped)
   fixed hit boxes. Squash, stretch, rotation and sprite changes happen only in view code and must
   never resize hitboxes.
 - **Controllers vs views.** `Duck` (physics/state, no Phaser imports) vs `DuckView` (sprite,
-  animation). Effects read one-frame flags (`justJumped`, `justLanded`, `justDashed`).
+  animation). Effects read one-frame flags (`justJumped`, `justLanded`, `justDashed`); they can be
+  raised by input or physics and are cleared once, at the **end** of `GameScene.update`.
 - **Physics is sub-stepped** (≤ 1/120 s) in `GameScene.update`. Use `dt`, never frame counts.
 - **Input** goes through `InputManager` actions (`jump`, `dash`, `confirm`, `pause`). Phaser's
   own input plugin is disabled.
@@ -106,7 +109,7 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
 | --- | --- | --- |
 | 1 Prototype | canvas, water, buoyancy, jump, dash, log, collision, restart | done |
 | — Art pass | duck spritesheet, parallax scenery, UI restyle | done |
-| 2 Game feel | squash/stretch springs, ripples, splashes, sound | next |
-| 3 Endless | rock + crate, patterns, stars, difficulty, game-over stats | — |
+| 2 Game feel | squash/stretch springs, ripples, splashes, synth sound effects, mute toggle | done — awaiting feel feedback |
+| 3 Endless | rock + crate, patterns, stars, difficulty, game-over stats | next |
 | 4 Polish | final UI per UI_SPEC, music, mobile tuning, performance | — |
 | 5 Publishing | build/asset optimisation, Poki SDK, submission tests | — |

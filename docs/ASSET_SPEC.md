@@ -62,7 +62,7 @@ baseline (the bottom of the art), then update its crop rows in `CONFIG.backgroun
 | --- | --- | --- |
 | `logo.png` | ~1200×640 | "WOBBLY" (white) over "DUCK" (yellow), heavy navy outline, slight arch and tilt, small water splashes either side. Displayed at ≤ 440 CSS px wide. |
 | `crown.png` | 128×128 | Small yellow crown with navy outline for the Best Distance badge. |
-| UI icons | inline SVG | Play, pause, sound on/off, home — authored in code, no files needed. |
+| UI icons | Phosphor Icons (npm) | Done — see UI_SPEC "Icons". No files needed. |
 
 ### Effects (Phase 2)
 
@@ -74,6 +74,10 @@ pivot at bottom centre = waterline) for a landing splash if the procedural one i
 
 Short, soft, playful. Mono, 44.1 kHz, `.mp3` (plus `.ogg` optional), normalised so no effect is
 louder than the others. Files in `public/assets/audio/`.
+
+**Current state:** jump, dash, both splashes, hit and UI click are synthesised in code
+(`src/core/Audio.ts`) as placeholders, so no files are required yet. Recorded files can replace
+them one by one; star, crate-break and music still need sounds.
 
 | File | Length | Character |
 | --- | --- | --- |

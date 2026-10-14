@@ -6,6 +6,9 @@ export interface UIHandlers {
   onResume(): void;
   onRestart(): void;
   onHome(): void;
+  onToggleSound(): void;
+  /** Called for every button press (UI click sound). */
+  onButton(): void;
 }
 
 function $(id: string): HTMLElement {
@@ -38,6 +41,7 @@ export class UI {
       el.addEventListener('click', (e) => {
         e.preventDefault();
         (el as HTMLButtonElement).blur();
+        handlers.onButton();
         fn();
       });
       // Keep button presses from being read as swipes.
@@ -49,6 +53,16 @@ export class UI {
     bind('btn-restart', handlers.onRestart);
     bind('btn-home', handlers.onHome);
     bind('btn-home-pause', handlers.onHome);
+    bind('btn-sound-menu', handlers.onToggleSound);
+    bind('btn-sound-pause', handlers.onToggleSound);
+  }
+
+  setMuted(muted: boolean): void {
+    for (const id of ['btn-sound-menu', 'btn-sound-pause']) {
+      const el = $(id);
+      el.setAttribute('aria-pressed', String(!muted));
+      el.setAttribute('aria-label', muted ? 'Sound off' : 'Sound on');
+    }
   }
 
   show(screen: Screen): void {
@@ -77,6 +91,7 @@ export class UI {
   setGameOver(distance: number, best: number, isNewBest: boolean): void {
     $('go-distance').textContent = fmt(distance);
     $('go-best').textContent = fmt(best);
-    $('go-new-best').hidden = !isNewBest;
+    $('go-best-label').textContent = isNewBest ? 'New Best!' : 'Best Distance';
+    $('go-best-badge').classList.toggle('is-new', isNewBest);
   }
 }

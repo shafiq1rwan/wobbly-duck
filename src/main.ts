@@ -8,7 +8,10 @@ import { CONFIG } from './config';
 import { computeRenderSize, installResizeHandling } from './core/Viewport';
 import { platform } from './platform/Platform';
 import { BootScene } from './scenes/BootScene';
+import { installIcons } from './ui/icons';
 import { GameScene } from './scenes/GameScene';
+
+installIcons();
 
 function start(): void {
   const { width, height } = computeRenderSize();
@@ -31,7 +34,7 @@ function start(): void {
     },
     // Input is handled by our own InputManager (keyboard + swipe) and the DOM UI.
     input: { keyboard: false, mouse: false, touch: false, gamepad: false },
-    // Audio arrives in Phase 2 (unlocked on first user interaction).
+    // Phaser audio is off: sound effects use our own Web Audio player (src/core/Audio.ts).
     audio: { noAudio: true },
     scene: [BootScene, GameScene],
   });

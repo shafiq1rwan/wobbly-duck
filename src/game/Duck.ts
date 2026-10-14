@@ -82,11 +82,13 @@ export class Duck {
     if (this.alive) this.jumpBuffer = D.jump.bufferTime;
   }
 
-  requestDash(): void {
-    if (!this.alive || this.dashCooldown > 0) return;
+  /** Starts a dash if allowed; returns false while cooling down. */
+  requestDash(): boolean {
+    if (!this.alive || this.dashCooldown > 0) return false;
     this.dashTime = D.dash.duration;
     this.dashCooldown = D.dash.cooldown;
     this.justDashed = true;
+    return true;
   }
 
   /** Extra world scroll speed contributed by the dash (strong at start, eases out). */

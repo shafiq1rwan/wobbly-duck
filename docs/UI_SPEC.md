@@ -53,9 +53,11 @@ rounded square (radius 12); the sound button is a circle. Mobile: 46×46.
 **HUD chip.** `--chip` fill, radius 10, padding 6×14, no border, min-width 104, white text 26 px
 weight 700. An optional 28 px icon on the left.
 
-**Icons.** Play ▶, pause, sound on/off, home, star, crown. Prefer inline SVG for the UI icons
-(crisp, tiny, colour via CSS); star and crown may be PNGs shared with gameplay (see
-ASSET_SPEC).
+**Icons.** Phosphor Icons, "fill" weight (MIT, `@phosphor-icons/core`): play, pause, replay,
+home, sound on/off, crown, star. `src/ui/icons.ts` imports only the icons used and injects them as
+an SVG sprite; markup uses `<svg class="icon"><use href="#i-name" /></svg>` and colours them with
+CSS `color`. The crown gets its navy outline from stacked `drop-shadow` filters. Add new icons the
+same way rather than hand-drawing SVG.
 
 ## Screens
 
@@ -131,7 +133,7 @@ Enter = Play Again (after a 0.35 s lockout, already implemented). Home returns t
 | Logo | Image, WOBBLY white / DUCK yellow, splashes | CSS text in the same colours, no splashes | Phase 4 (needs `logo.png`) |
 | Play button | Yellow pill with ▶ | Done | — |
 | Best Distance badge | Crown + label + value | Done (SVG crown) | — |
-| Sound toggle | Top-right navy circle | Missing | Phase 2 (with audio) |
+| Sound toggle | Top-right navy circle | Done — menu and pause screens; saved as `muted` | — |
 | Star chip / Stars row | Star + count | Missing | Phase 3 (stars) |
 | Distance chip | Navy translucent chip | Done | — |
 | Pause button | Navy rounded square | Done | — |

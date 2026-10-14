@@ -11,40 +11,7 @@
     <title>Wobbly Duck</title>
   </head>
   <body>
-    <!-- UI icon sprite: referenced with <use href="#i-…"> -->
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      <symbol id="i-play" viewBox="0 0 24 24">
-        <path d="M7.5 4.6v14.8c0 1 1.1 1.6 2 1.1l11.6-7.4c.8-.5.8-1.7 0-2.2L9.5 3.5c-.9-.5-2 .1-2 1.1z" fill="currentColor" />
-      </symbol>
-      <symbol id="i-pause" viewBox="0 0 24 24">
-        <rect x="5.5" y="4.5" width="4.5" height="15" rx="1.6" fill="currentColor" />
-        <rect x="14" y="4.5" width="4.5" height="15" rx="1.6" fill="currentColor" />
-      </symbol>
-      <symbol id="i-home" viewBox="0 0 24 24">
-        <path
-          d="M3.5 11.2 12 4l8.5 7.2M6 9.6v9.2c0 .6.4 1 1 1h3.4v-5.2h3.2v5.2H17c.6 0 1-.4 1-1V9.6"
-          fill="#fff"
-          stroke="#13266A"
-          stroke-width="2"
-          stroke-linejoin="round"
-          stroke-linecap="round"
-        />
-      </symbol>
-      <symbol id="i-crown" viewBox="0 0 32 28">
-        <path
-          d="M4 9.5 9.5 15 16 5l6.5 10L28 9.5 25.6 23H6.4z"
-          fill="#FFE45C"
-          stroke="#13266A"
-          stroke-width="2.6"
-          stroke-linejoin="round"
-        />
-        <rect x="6.2" y="21.4" width="19.6" height="4.4" rx="1.6" fill="#F7B92B" stroke="#13266A" stroke-width="2.4" />
-        <circle cx="16" cy="4.6" r="2.4" fill="#FFE45C" stroke="#13266A" stroke-width="2.2" />
-        <circle cx="3.8" cy="9" r="2.2" fill="#FFE45C" stroke="#13266A" stroke-width="2.2" />
-        <circle cx="28.2" cy="9" r="2.2" fill="#FFE45C" stroke="#13266A" stroke-width="2.2" />
-      </symbol>
-    </svg>
-
+    <!-- Icons (Phosphor, MIT) are injected as an SVG sprite by src/ui/icons.ts; use <use href="#i-…">. -->
     <div id="game"></div>
 
     <div id="ui">
@@ -55,19 +22,23 @@
           <!-- Star chip arrives with collectibles (Phase 3) -->
         </div>
         <button id="btn-pause" class="icon-btn icon-btn-square" aria-label="Pause">
-          <svg><use href="#i-pause" /></svg>
+          <svg class="icon"><use href="#i-pause" /></svg>
         </button>
       </div>
 
       <!-- Main menu -->
       <div id="menu" class="screen menu-screen" hidden>
+        <button id="btn-sound-menu" class="icon-btn sound-btn" aria-label="Sound on" aria-pressed="true">
+          <svg class="icon when-on"><use href="#i-sound-on" /></svg>
+          <svg class="icon when-off"><use href="#i-sound-off" /></svg>
+        </button>
         <div class="menu-stack">
           <h1 class="logo" aria-label="Wobbly Duck">
             <span class="logo-top">Wobbly</span>
             <span class="logo-bottom">Duck</span>
           </h1>
           <button id="btn-play" class="btn btn-primary btn-play" aria-label="Play">
-            <svg><use href="#i-play" /></svg>
+            <svg class="icon"><use href="#i-play" /></svg>
           </button>
           <div class="best-badge">
             <svg class="crown"><use href="#i-crown" /></svg>
@@ -85,20 +56,26 @@
 
       <!-- Pause -->
       <div id="pause" class="screen panel-screen dim" hidden>
-        <div class="panel">
+        <button id="btn-sound-pause" class="icon-btn sound-btn" aria-label="Sound on" aria-pressed="true">
+          <svg class="icon when-on"><use href="#i-sound-on" /></svg>
+          <svg class="icon when-off"><use href="#i-sound-off" /></svg>
+        </button>
+        <div class="modal">
           <h2 class="title">Paused</h2>
           <div class="btn-row">
             <button id="btn-home-pause" class="btn btn-secondary" aria-label="Main menu">
-              <svg><use href="#i-home" /></svg>
+              <svg class="icon"><use href="#i-home" /></svg>
             </button>
-            <button id="btn-resume" class="btn btn-primary btn-wide">Resume</button>
+            <button id="btn-resume" class="btn btn-primary btn-wide">
+              <svg class="icon"><use href="#i-play" /></svg><span>Resume</span>
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Game over -->
       <div id="gameover" class="screen panel-screen dim" hidden>
-        <div class="panel">
+        <div class="modal">
           <h2 class="title">Game Over</h2>
           <div class="stats-card">
             <div class="stat-row">
@@ -107,19 +84,20 @@
             </div>
             <!-- Stars row arrives with collectibles (Phase 3) -->
           </div>
-          <div class="best-badge">
+          <div id="go-best-badge" class="best-badge">
             <svg class="crown"><use href="#i-crown" /></svg>
             <div class="best-text">
-              <span class="best-label">Best Distance</span>
+              <span id="go-best-label" class="best-label">Best Distance</span>
               <span class="best-value"><span id="go-best">0</span> m</span>
             </div>
-            <span id="go-new-best" class="new-best" hidden>New best!</span>
           </div>
           <div class="btn-row">
             <button id="btn-home" class="btn btn-secondary" aria-label="Main menu">
-              <svg><use href="#i-home" /></svg>
+              <svg class="icon"><use href="#i-home" /></svg>
             </button>
-            <button id="btn-restart" class="btn btn-primary btn-wide">Play Again</button>
+            <button id="btn-restart" class="btn btn-primary btn-wide">
+              <svg class="icon"><use href="#i-replay" /></svg><span>Play Again</span>
+            </button>
           </div>
         </div>
       </div>
