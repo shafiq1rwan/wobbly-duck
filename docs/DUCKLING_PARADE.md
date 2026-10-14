@@ -5,9 +5,9 @@ your jumps a beat later. Every duckling multiplies the corn you earn, so don't l
 
 The mother duck is the existing duck sprite — only the ducklings need new art.
 
-Status: **built** with a placeholder duckling (the duck sprite at 55% size, tinted lighter) until
-the duckling art arrives. Tuning lives in `src/config.ts` (`ducklings`, `food.kinds`); the code is
-`src/game/Parade.ts`.
+Status: **built** with a placeholder duckling (the duck sprite at 68% size, tinted lighter, wearing
+the mother's skin) until the duckling art arrives. Tuning lives in `src/config.ts` (`ducklings`,
+`food.kinds`); the code is `src/game/Parade.ts`.
 
 Tested with an in-game bot: a full parade of 6 survives every difficulty tier when jumping slightly
 early (0 losses up to 2,000 m); jumping 60 ms late loses tail ducklings at low speed without
@@ -17,13 +17,16 @@ killing the mother.
 
 1. **Lost ducklings** float on the river, bobbing and peeping, with a soft glow ring so they read
    as "pick me up". Swim (or jump) into one and it joins the parade.
-2. **The parade** follows behind you in a line, about 52 units apart (tighter on narrow phones so
-   all six fit), each one bobbing and squishing on its own. Up to **6** ducklings, at 68% of the duck's size.
-3. **They copy your jumps** — each one jumps a moment after the one in front. They don't dash.
+2. **The parade** follows behind you in a line: the first duckling 90 units behind you, then 62
+   units apart (down to 40 on narrow phones so all six fit), each one bobbing and squishing on its
+   own. Up to **6** ducklings, at 68% of the duck's size.
+3. **They copy your jumps**, double jumps included, each one a moment after the one in front. They
+   bounce on lily pads too. They don't dash.
 4. **If an obstacle hits a duckling**, only that duckling is lost: it tumbles off with a sad peep
    and a splash, floats away behind, and the line closes the gap. The run continues.
 5. **If you (the mother duck) crash**, the run ends as now and the parade scatters.
-6. **Crates you smash** are gone for the whole parade — dashing through crates protects them.
+6. **Crates and crate stacks you smash** are gone for the whole parade — dashing protects them.
+   Double-jumping a stack also works for a full parade (bot-tested: 16 stacks, no losses).
 
 The skill: with a long parade, **jump a little earlier** so the whole line clears the obstacle.
 Late, barely-made jumps catch the tail.
@@ -54,17 +57,17 @@ where a duckling would be forced into an obstacle.
   and the Best Score badge.
 - **Records (saved):** `bestScore` is the main record (menu + Game Over); `best` (distance) and
   `bestParade` are kept too.
-- **Currency:** every run's score is added to `scoreBank` (shown on the menu with a star), to be
-  spent on **duck skins** later (mallard, Pekin and khaki already exist in `assets-src/duck-variants-v1/`).
-- **First time only:** a small hint when the first duckling appears: "Swim into ducklings — they
-  follow you!"
+- **Currency:** every run's score is added to `scoreBank` (shown on the menu with a star) and spent
+  in the **skins shop** (seven ducks, `CONFIG.skins`).
+- **First time only:** a tip card when the first duckling appears: "Swim into ducklings: they
+  follow you and multiply your score!"
 
 ## Where ducklings appear
 
 - They are pattern entries, like food, placed only in **safe water** — at least 0.6 s before the
   next obstacle, so picking one up never forces a bad jump.
-- First duckling after about **150 m**, then one every **300–500 m** while the parade is
-  below 6. A little more often after you lose one, so a bad moment isn't the end of the parade.
+- First duckling after about **80 m**, then one every **220–380 m** while the parade is below 6,
+  and sooner (about 150 m) after you lose one, so a bad moment isn't the end of the parade.
 - Late in a run (800 m+), some ducklings sit just after an obstacle, as a small reward for
   clearing it.
 
@@ -91,12 +94,11 @@ synthesise them.
 
 ## Build plan
 
-1. Duckling logic with a placeholder (the duck sprite scaled down and tinted lighter), so we can
-   play and tune before the art arrives.
-2. Spawning in patterns, multiplier, HUD chip, Game Over row, saved best parade.
-3. Sounds and effects; first-time hint.
-4. Swap in Codex's duckling art.
-5. Bot test: confirm a well-timed jump saves a full parade at every difficulty tier.
+1. ~~Duckling logic with a placeholder~~ — done.
+2. ~~Spawning in patterns, multiplier, HUD chip, Game Over row, saved best parade~~ — done.
+3. ~~Sounds and effects; first-time hint~~ — done.
+4. Swap in Codex's duckling art — **waiting for the art**.
+5. ~~Bot test at every difficulty tier~~ — done (also with lily pads and crate stacks).
 
 ## Open questions (current defaults)
 

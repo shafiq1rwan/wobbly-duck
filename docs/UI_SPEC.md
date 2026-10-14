@@ -53,9 +53,9 @@ same shadow and press behaviour, holding an icon (home).
 **Icon button.** 52×52, `--navy-btn` fill, white icon, 2 px darker border. The pause button is a
 rounded square (radius 12); the sound button is a circle. Mobile: 46×46.
 
-**Best Distance badge.** Crown icon (36 px) to the left of two lines: a "Best Distance" label
-(16 px, weight 600, white with a 3 px `--ink` stroke) over the value (`1,286 m`, 28 px, weight
-700, same stroke). Used on the main menu and the game-over screen.
+**Best Score badge.** Crown icon (36 px) to the left of two lines: a "Best Score" label (16 px,
+weight 600, white with a 3 px `--ink` stroke) over the value (`96,350`, 28 px, weight 700, same
+stroke). Used on the main menu and the game-over screen ("New Best!" in orange when beaten).
 
 **HUD chip.** `--chip` fill, radius 10, padding 6×14, no border, min-width 104, white text 26 px
 weight 700. An optional 28 px icon on the left.
@@ -78,9 +78,11 @@ obstacles. There is no dim overlay.
 | Menu stack (logo, Play, badge) | Centred on screen, horizontally and vertically | Same. On tall screens the camera keeps the water line ≈75% down (`CONFIG.view.minWaterFraction`), so the centred stack never covers the duck |
 | Logo (image) | Width ≈ 30% of viewport (max 440 px) | Width ≈ 72% |
 | Play button (▶) | Centred below the logo, 190×66 | 52% width, 60 tall |
-| Best Distance badge | Centred under Play | Centred under Play |
+| Best Score badge | Centred under Play | Centred under Play |
+| Bank + Skins pill | Under the badge: `★ total score │ Skins`, opens the shop; orange dot when a new skin is affordable | Same |
 | Sound toggle | Top-right corner | Top-right corner |
-| Controls hint | Small, low-contrast text at the bottom; first visit only | Tap hint at the bottom ("Tap left to jump · Tap right to dash"); first visit only. First 3 runs: faint "JUMP" / "DASH" text in the centre of each half, faded out after ~4 s |
+| Version | Tiny, faint, bottom-right (`v0.1.0+3f5c2d1`) | Same |
+| Controls hint | Small text at the bottom, first visit only: "Your duck swims by itself! W / ↑ to jump · D / → to dash" | Same, first visit only: "Your duck swims by itself! Tap JUMP and DASH" |
 
 Logo: "WOBBLY" in white over "DUCK" in yellow, heavy navy outline, slight arch and tilt, water
 splash droplets either side. It is an image asset (`logo.png`), not CSS text.
@@ -112,18 +114,32 @@ the last owned skin picked.
 
 | Element | Position | Content |
 | --- | --- | --- |
-| ~~Food chip~~ | — | Removed: corn is a currency, shown on the main menu (corn bank) and on Game Over (`Corn +45`) |
-| Distance chip | Top-left, below the star chip (gap 6) | `512 m` |
+| Score | Top centre, big white outlined numbers | `12,050`; bumps on each pickup; floating `+N` popups at the pickup |
+| Distance chip | Top-left | `512 m` |
+| Parade chip | Top-left, under the distance chip | Duckling icon + `×N` multiplier; pops on join, shakes red on loss, hidden with no ducklings |
 | Pause button | Top-right | Pause bars |
+| Controls | Desktop: keys line at the bottom centre; touch: JUMP / DASH buttons in the bottom corners | See below |
 
-- The HUD stays minimal: nothing else on screen, and no sound toggle during play (it lives on the menu and pause screens).
-- On food pickup the food chip pops: scale 1 → 1.2 → 1 over 180 ms.
-- Distance updates once per whole metre (already the case).
-- Mobile: chips at 85% size.
+- The HUD stays minimal, and there's no sound toggle during play (it lives on the menu and pause screens).
+- Distance updates once per whole metre.
+- Chips scale with `--hud-h` (fluid, smaller on phones).
 
 **Best-distance flag** (in the world, not the HUD): a yellow pennant on a pole, `BEST 742 m`, planted
 in the river at the best distance once it is at least `CONFIG.bestMarker.minMetres`. Swimming past it
 shows the toast "New best distance!" with a fanfare and a small confetti fountain.
+
+**Touch buttons** (touch screens only; added after playtests where players didn't know what to
+press): round **JUMP** (bottom-left, up arrow) and **DASH** (bottom-right, lightning) buttons,
+`--act` size, firing on touch-down. Tapping either half of the screen still works too. DASH dims
+while recharging and glows orange when a crate is coming and the dash is ready (desktop: the D / →
+keycaps glow instead). Tip cards sit above the buttons.
+
+**First-run coach** (once per device, `learnedJump` / `learnedDash` in storage): the first run is
+scripted log → corn line → crate. As the log comes close the river eases to a stop and a yellow
+callout appears beside the JUMP button with an arrow ("Tap JUMP to hop over it!"; desktop: "Press W
+or ↑ to hop over it!" above the keys line, keycaps glowing); the moment the player jumps, the river
+flows again. The first crate does the same for DASH ("Tap DASH to smash the crate!"). A tip at the
+start of the first run says "Your duck swims by itself! Just jump and dash."
 
 **Desktop controls line** (HUD, hidden on touch screens): bottom centre just above the credit —
 "Press [W] or [↑] to jump · Press [D] or [→] to dash" with keycap-style keys. On desktop the tip
@@ -142,9 +158,11 @@ feathers and corn kernels (`src/game/Confetti.ts`, tuning in `CONFIG.celebration
 ### Revive offer
 
 After a crash, once per run and only past `CONFIG.revive.minMetres`: a dimmed card with "Keep going?",
-the run's score, a draining timer bar (`CONFIG.revive.offerSeconds`), a primary `▶ Revive` button with
-"Watch a short ad to continue this run", and a "No thanks" text button. Enter = Revive, Esc = No
-thanks; when the bar empties it becomes Game Over. The ad goes through `platform.rewardedBreak()`;
+the run's score, a draining timer bar (`CONFIG.revive.offerSeconds`), the line "Watch a short ad to
+continue this run", then two buttons side by side and the same size: `No thanks` (secondary) and
+`▶ Revive` (primary, with a big video icon). Poki requires the standard option to be at least as big
+as the reward button, beside or above it, and the reward button not green. Enter = Revive, Esc = No
+thanks; when the bar empties it becomes Game Over. After a reward, "Revived! Keep going!" shows. The ad goes through `platform.rewardedBreak()`;
 on success the duck is back in the water where it crashed, the river ahead is cleared and it blinks
 through obstacles for `CONFIG.revive.graceSeconds`.
 
@@ -160,8 +178,9 @@ hidden during play, the game auto-pauses (already implemented).
 | --- | --- | --- |
 | Dim overlay | Full screen `--overlay` with blur | Same |
 | Title | "Game Over", 64 px white, navy stroke 6 px, centred near the top | 44 px |
-| Stats card | `--card`, radius 14, ~330×84, rows `Distance … 742 m` (flag icon) and `Food … 28` (corn-kernel image) (labels left, 22 px weight 500; values right, 24 px weight 700; `--ink`) | Full width minus 48 px |
-| Best Distance badge | Centred under the card | Same |
+| Score | The run's score, big yellow numbers under the title | Same |
+| Stats card | `--card`, radius 14, rows `Distance … 742 m` (flag icon) and `Ducklings … 4` (biggest parade, duck icon) (labels left; values right; `--ink`) | Full width minus 48 px |
+| Best Score badge | Centred under the card | Same |
 | New best | Not in the reference. Show a small "New best!" ribbon on the badge with a sparkle when beaten | Same |
 | Buttons | Row: Home (84×56 secondary) + Play Again (200×56 primary), centred | Same, Play Again flexes wider |
 
@@ -189,20 +208,21 @@ Enter = Play Again (after a 0.35 s lockout, already implemented). Home returns t
 | --- | --- | --- | --- |
 | Logo | Image, WOBBLY white / DUCK yellow, splashes | CSS text in the same colours, no splashes | Phase 4 (needs `logo.png`) |
 | Play button | Yellow pill with ▶ | Done | — |
-| Best Distance badge | Crown + label + value | Done (SVG crown) | — |
+| Best badge | Crown + label + value | Done — Best **Score** (SVG crown) | — |
 | Sound toggle | Top-right navy circle | Done — menu and pause screens; saved as `muted` | — |
-| Corn (stars in the mockup) | Star chip + Stars row | No HUD chip; Game Over `Corn +N`; menu corn bank pill under Best Distance | — |
-| Distance chip | Navy translucent chip | Done | — |
+| Stars in the mockup | Star chip + Stars row | Replaced by the run score (top centre) and the score bank (`★` pill on the menu, spent in the shop) | — |
+| Distance chip | Navy translucent chip | Done, plus the parade chip | — |
 | Pause button | Navy rounded square | Done | — |
 | Pause screen | (derived) | Done — Home + Resume | — |
-| Game over | Title, stats card, badge, Home + Play Again | Done (Distance + Food rows) | — |
-| New best | (derived) | Done — orange ribbon beside the badge | — |
+| Game over | Title, stats card, badge, Home + Play Again | Done (score, Distance + Ducklings rows) | — |
+| New best | (derived) | Done — orange label on the badge; in-run "New Record!" party | — |
 | Number format | `1,286 m` | Done | — |
-| Controls hint | First visit only | Done — hidden after the first run (`runs` in storage) | — |
+| Controls hint | First visit only | Done — menu line on the first visit; desktop keys line in the HUD; touch JUMP / DASH buttons; first-run coach | — |
+| Shop, revive, tips | (derived) | Done — see the sections above | — |
 
 ## Open questions
 
 - **Duck position on the portrait menu.** The reference centres the duck on the mobile menu;
-  gameplay keeps it at 27% of the width. Either accept the difference or ease the camera between
+  gameplay keeps it at 27–33% of the width. Either accept the difference or ease the camera between
   the menu and gameplay framing.
 - **Title font.** Keep Fredoka, or add Lilita One for headings (+~20 KB)?

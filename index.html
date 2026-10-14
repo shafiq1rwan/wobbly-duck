@@ -58,11 +58,23 @@
         </div>
         <!-- Desktop only (hidden on touch screens): keyboard controls at the bottom centre. -->
         <p class="controls-hint">
-          Press <kbd>W</kbd> or <kbd>↑</kbd> to jump<span class="controls-sep">·</span>Press <kbd>D</kbd> or <kbd>→</kbd> to dash
+          Press <kbd class="key-jump">W</kbd> or <kbd class="key-jump">↑</kbd> to jump<span class="controls-sep">·</span>Press
+          <kbd class="key-dash">D</kbd> or <kbd class="key-dash">→</kbd> to dash
         </p>
-        <div id="touch-zones" class="touch-zones" aria-hidden="true" hidden>
-          <span class="zone">JUMP</span>
-          <span class="zone">DASH</span>
+        <!-- Touch screens only: visible JUMP / DASH buttons (tapping either half of the screen works too). -->
+        <div class="action-btns">
+          <button id="btn-jump" class="action-btn" aria-label="Jump">
+            <svg class="icon"><use href="#i-jump" /></svg><span>JUMP</span>
+          </button>
+          <button id="btn-dash" class="action-btn" aria-label="Dash">
+            <svg class="icon"><use href="#i-dash" /></svg><span>DASH</span>
+          </button>
+        </div>
+        <!-- First run: a callout that pauses the river until the player tries the move. -->
+        <div id="coach" class="coach" hidden>
+          <svg class="icon coach-arrow"><use href="#i-point-left" /></svg>
+          <span id="coach-text" class="coach-text"></span>
+          <svg class="icon coach-arrow"><use href="#i-point-right" /></svg>
         </div>
         <button id="btn-pause" class="icon-btn icon-btn-square" aria-label="Pause">
           <svg class="icon"><use href="#i-pause" /></svg>
@@ -101,8 +113,8 @@
         <!-- Build version (filled in by main.ts) so bug reports say which build. -->
         <p id="version" class="version" aria-hidden="true"></p>
         <p id="menu-hint" class="hint">
-          <span class="hint-desktop">Space / W / ↑ to jump &nbsp;·&nbsp; D / → to dash</span>
-          <span class="hint-touch">Tap left to jump &nbsp;·&nbsp; Tap right to dash</span>
+          <span class="hint-desktop">Your duck swims by itself! &nbsp;W / ↑ to jump &nbsp;·&nbsp; D / → to dash</span>
+          <span class="hint-touch">Your duck swims by itself! &nbsp;Tap JUMP and DASH</span>
         </p>
       </div>
 

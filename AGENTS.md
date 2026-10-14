@@ -7,14 +7,17 @@ then the doc that matches your task:
 - Art and audio assets → [docs/ASSET_SPEC.md](docs/ASSET_SPEC.md)
 - The twist (Duckling Parade) → [docs/DUCKLING_PARADE.md](docs/DUCKLING_PARADE.md)
 - Analytics / Poki Game Events → [docs/ANALYTICS.md](docs/ANALYTICS.md)
+- Overview, scripts, Poki build and versions → [README.md](README.md)
 
 ## The game
 
-A 2D side-scrolling endless runner for desktop and mobile browsers, aimed at Poki. A chubby
+A 2D side-scrolling endless runner for desktop and mobile browsers, published on Poki. A chubby
 yellow duck floats on an endless river; the world scrolls right-to-left. The player jumps
 (Space / W / ↑, or tap the left half; again in the air for a double jump) and dashes
-(D / →, or tap the right half) to avoid logs, rocks and crates and
-to collect food (corn kernels, peas, and rare big corn). Sessions are short and restarting is instant.
+(D / →, or tap the right half) to avoid logs, rocks, crates and crate stacks, and collects eight
+kinds of corn kernel. Lost ducklings join a parade that multiplies the score; lily pads bounce the
+duck high. Scores add up to a bank that buys duck skins. Sessions are short and restarting is
+instant.
 
 Design pillars — check every change against these:
 
@@ -30,30 +33,34 @@ npm install
 npm run dev         # http://localhost:5173 (LAN URL is printed for phone testing)
 npm run typecheck   # must pass before you finish
 npm run build       # typecheck + production build into dist/
-npm run build:poki  # Poki build (real SDK, no debug, no credit) into dist-poki/ + wobbly-duck-poki.zip
+npm run build:poki  # Poki build (real SDK, no debug, no credit) into dist-poki/ + wobbly-duck-poki-v<version>-<commit>.zip
 ```
 
-Add `?debug` to the URL to draw collision shapes and expose the scene as `window.__scene`.
+Add `?debug` to the URL to draw collision shapes, log Game Events (`[measure] …`) and expose the
+scene as `window.__scene`. Debug code is compiled out of the Poki build (`import.meta.env.MODE === 'poki'`).
+The build version (`package.json` version + commit, `-dirty` with uncommitted changes) is injected as
+`__APP_VERSION__` and shown on the menu.
 
 ## Stack and layout
 
-Phaser 3.90 (rendering, scenes, sprites, animation), TypeScript (strict), Vite 7. No Phaser
-physics: movement and collisions are hand-written.
+Phaser 3.90 (rendering, scenes, sprites, animation; aliased to its official build without Matter
+physics), TypeScript (strict), Vite 7. No Phaser physics: movement and collisions are hand-written.
 
 ```
 index.html               DOM overlay markup (menus, HUD)
-src/main.ts              Phaser game config
+src/main.ts              Phaser game config, version label
+src/fonts.css            Fredoka @font-face (Latin woff2 only)
 src/config.ts            ALL gameplay tuning (speeds, jump, buoyancy, dash, water, spawning, colours)
 src/core/                Viewport (DPR, resize, camera framing), InputManager, Storage, Audio (Web Audio sfx)
 src/platform/            Portal adapter — LocalPlatform (fake ads) in dev, PokiPlatform in `--mode poki`
 src/art/duckSprite.ts    Duck sheet layout: frame size, pivot, scale, animations
 src/game/                Duck (controller), DuckView (visuals + squash/stretch), Spring, Water (waves +
                          ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
-                         ObstacleManager (log/crate/rock), FoodManager, LilyPads (bounce pads + frogs),
-                         Parade (ducklings), BestMarker (best-distance flag), Skins (owned/worn skins),
-                         Confetti (party poppers + confetti),
-                         ScorePopups, Patterns (handcrafted
-                         patterns + Spawner, difficulty tiers), Background
+                         ObstacleManager (log/crate/rock/crate stack), FoodManager, LilyPads (bounce
+                         pads + frogs), Parade (ducklings), BestMarker (best-distance flag), Skins
+                         (owned/worn skins), Confetti (party poppers + confetti), Analytics (Poki Game
+                         Events), ScorePopups, Patterns (handcrafted patterns + Spawner, difficulty
+                         tiers), Background (parallax + tropical→lake biome)
 src/scenes/              BootScene (loading), GameScene (state machine + loop)
 src/ui/UI.ts + style.css DOM menus and HUD
 assets-src/              High-res source art (versioned, NOT shipped)
@@ -65,8 +72,8 @@ docs/                    Specs and reference images (not shipped)
 ## Architecture rules
 
 - **World units.** 1 unit ≈ 1 CSS px at the 1280×720 reference. The water rest line is
-  `CONFIG.water.restY` (470). The duck's anchor is world x = 0; the camera puts it at 27% of
-  the visible width.
+  `CONFIG.water.restY` (470). The duck's anchor is world x = 0; the camera puts it at 27% (narrow
+  screens) to 33% (wide screens) of the visible width, zoomed so ~660 units of height show.
 - **Tuning lives in `src/config.ts`.** Don't hard-code gameplay numbers elsewhere.
 - **Collision is separate from visuals.** `Duck.collider` is a fixed circle and obstacles use
   fixed hit boxes. Squash, stretch, rotation and sprite changes happen only in view code and must
@@ -75,16 +82,26 @@ docs/                    Specs and reference images (not shipped)
   animation). Effects read one-frame flags (`justJumped`, `justLanded`, `justDashed`); they can be
   raised by input or physics and are cleared once, at the **end** of `GameScene.update`.
 - **Physics is sub-stepped** (≤ 1/120 s) in `GameScene.update`. Use `dt`, never frame counts.
-- **Input** goes through `InputManager` actions (`jump`, `dash`, `confirm`, `pause`). Phaser's
-  own input plugin is disabled.
+- **Input** goes through `InputManager` actions (`jump`, `dash`, `confirm`, `pause`): keys, taps on
+  the canvas halves, and the touch JUMP / DASH buttons (`InputManager.press`). Phaser's own input
+  plugin is disabled. The first-run coach (`GameScene.coach`) eases the river to a stop
+  (`timeScale`) until the player does the move; bots that call `duck.requestJump()` directly must
+  set `learnedJump` / `learnedDash` in storage first.
 - **UI is a DOM overlay**, not Phaser text. It respects safe areas via CSS `env()`.
 - **Platform code stays in `src/platform/`.** Don't call any portal SDK from gameplay code,
   and don't invent SDK method names — use the official Poki documentation when integrating.
 - **Patterns are timed in seconds of travel** (`src/game/Patterns.ts`), so fairness holds at any
   speed. The Spawner enforces obstacle spacing across patterns (`spawner.minObstacleGap`,
-  `afterCrateGap`) and fills open water with a corn trail, planning ~3 s ahead so nothing pops in. Food arcs
-  use the simulated jump, so they always match the real trajectory. Food can rest only on crates
-  (`lid`, collected by smashing); above logs/rocks use `crown` at jump height.
+  `afterCrateGap`, `afterPadGap`, `beforeStackGap` / `afterStackGap`) and fills open water with a corn
+  trail, planning ~3 s ahead so nothing pops in. Food arcs use the simulated jump (single, double, pad
+  bounce), so they always match the real trajectory. Food can rest only on crates and crate stacks
+  (`lid` / `stackLid`, collected by smashing or flying over); above logs/rocks use `crown` at jump
+  height. A new obstacle's height and spacing should be checked against the jump physics and with
+  an in-game bot (single vs double jump vs dash), including wave bobbing.
+- **Ads and analytics go through `platform`**: `commercialBreak` before every run and resume,
+  `rewardedBreak` for the revive (audio muted in the `onStart` callback, input ignored while
+  `adPlaying`), `gameplayStarted`/`Stopped` never twice in a row, and Game Events only via
+  `src/game/Analytics.ts`.
 - **Pool, don't allocate**, in per-frame code (obstacles, particles, effects).
 - Keep it simple: no new frameworks, state libraries or abstractions without a clear need.
 
@@ -96,7 +113,9 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
   `tools/optimize-images.py` (crop, max height, WebP quality) and run
   `python tools/optimize-images.py` — it writes WebPs to `public/assets/`. Never copy raw PNGs into
   `public/`. Load files in `BootScene.preload` with `` `${import.meta.env.BASE_URL}assets/<file>` ``
-  and add a matching `<link rel="preload" as="image">` in `index.html`.
+  and add a matching `<link rel="preload" as="image">` in `index.html`. Art not needed at the start
+  (skins, lake scenery) loads on demand instead and gets no preload. Art that isn't used goes in the
+  script's `UNUSED` list, so it never ships.
 - **Duck skins** (shop) are sheets with the same layout as `duck-sheet.png` (2048×256, eight 256 cells,
   six poses, same eye alignment). To add one: a MANIFEST entry in `tools/optimize-images.py`
   (→ `public/assets/duck-<id>.webp`) and an entry in `CONFIG.skins` (id, name, file, price). Skins load
@@ -139,6 +158,7 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
 | 1 Prototype | canvas, water, buoyancy, jump, dash, log, collision, restart | done |
 | — Art pass | duck spritesheet, parallax scenery, UI restyle | done |
 | 2 Game feel | squash/stretch springs, ripples, splashes, synth sound effects, mute toggle | done |
-| 3 Endless | log/crate/rock, dash-smash crates, handcrafted patterns, food collectibles, speed ramp + tiers, game-over food | done — awaiting feedback |
-| 4 Polish | final UI per UI_SPEC, music, mobile tuning, performance | — |
-| 5 Publishing | build/asset optimisation, Poki SDK, submission tests | — |
+| 3 Endless | log/crate/rock/crate stack, dash-smash, patterns + tiers, corn kernels, Duckling Parade, double jump, lily pads + frogs, lake biome | done |
+| — Engagement | score bank + skins shop, best-distance flag, new-record party, watch-an-ad revive, tip cards | done |
+| 4 Polish | logo image, music, duckling art, more skins (Codex), seagull obstacle (art exists) | in progress |
+| 5 Publishing | Poki SDK, ad breaks, Game Events, version label, slim build, zip | done — approved on Poki |

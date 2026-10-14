@@ -771,45 +771,200 @@ button {
   }
 }
 
-/* First runs on touch devices: faint JUMP / DASH in the centre of each tap half, then gone. */
-.touch-zones {
-  position: absolute;
-  inset: 0;
+/*
+ * Touch screens: big JUMP / DASH buttons in the bottom corners (playtests: players didn't know what
+ * to press). DASH dims while recharging and glows when a crate is coming and the dash is ready.
+ */
+:root {
+  --act: clamp(68px, 19vmin, 92px);
+}
+
+.action-btns {
   display: none;
+}
+
+.action-btn {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 18px);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  pointer-events: none;
-}
-
-.touch-zones .zone {
-  flex: 1;
-  text-align: center;
-  font-size: clamp(28px, 8vmin, 56px);
+  justify-content: center;
+  gap: 1px;
+  width: var(--act);
+  height: var(--act);
+  font-size: clamp(11px, 3vmin, 14px);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--white);
-  text-shadow: 0 2px 0 rgba(30, 70, 125, 0.35);
+  background: rgba(38, 81, 132, 0.72);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  box-shadow: 0 5px 0 rgba(19, 38, 106, 0.55);
+  touch-action: none;
+  transition:
+    transform 0.08s ease,
+    opacity 0.2s ease,
+    background-color 0.2s ease;
 }
 
-.touch-zones.show {
-  animation: touch-zones 4s ease-out forwards;
+#btn-jump {
+  left: calc(var(--safe-left) + 18px);
+}
+
+#btn-dash {
+  right: calc(var(--safe-right) + 18px);
+}
+
+.action-btn .icon {
+  width: 42%;
+  height: 42%;
+}
+
+.action-btn.pressed {
+  transform: scale(0.88);
+  background: rgba(38, 81, 132, 0.95);
+}
+
+.action-btn.cooling {
+  opacity: 0.45;
+}
+
+/* A crate is coming and the dash is ready: smash it! */
+.action-btn.glow,
+.action-btn.coach-target {
+  border-color: var(--yellow);
+  background: rgba(255, 153, 74, 0.9);
+  animation: action-glow 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes action-glow {
+  from {
+    box-shadow:
+      0 5px 0 rgba(19, 38, 106, 0.55),
+      0 0 0 0 rgba(255, 217, 63, 0.7);
+  }
+  to {
+    box-shadow:
+      0 5px 0 rgba(19, 38, 106, 0.55),
+      0 0 0 12px rgba(255, 217, 63, 0);
+  }
+}
+
+/* Desktop: the matching keycaps in the controls line glow instead. */
+.controls-hint kbd.glow,
+.controls-hint kbd.coach-target {
+  background: var(--yellow);
+  animation: key-glow 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes key-glow {
+  to {
+    transform: translateY(-2px) scale(1.12);
+  }
 }
 
 @media (hover: none) and (pointer: coarse) {
-  .touch-zones:not([hidden]) {
-    display: flex;
+  .action-btns {
+    display: block;
+  }
+  /* Tip cards sit above the buttons. */
+  .toast {
+    bottom: calc(var(--safe-bottom) + var(--act) + 34px);
   }
 }
 
-@keyframes touch-zones {
-  0% {
+/*
+ * First run: the river slows to a stop and this callout says what to press, pointing at the
+ * button (touch) or naming the keys (desktop). It goes as soon as the player does it.
+ */
+.coach {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 72px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(calc(100vw - 32px), 460px);
+  padding: 8px 18px 10px;
+  font-size: clamp(16px, 4.4vmin, 22px);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--ink);
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: coach-in 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.coach[hidden] {
+  display: none;
+}
+
+.coach-arrow {
+  display: none;
+  flex: none;
+  width: 1.5em;
+  height: 1.5em;
+}
+
+@keyframes coach-in {
+  from {
     opacity: 0;
+    transform: translateX(-50%) scale(0.6);
   }
-  8%,
-  70% {
-    opacity: 0.45;
-  }
-  100% {
+}
+
+/*
+ * Touch: beside the button it's about (same height), with an arrow bouncing towards it, so the
+ * river above stays clear in portrait and landscape.
+ */
+.coach.at-jump,
+.coach.at-dash {
+  bottom: calc(var(--safe-bottom) + 18px + var(--act) / 2);
+  max-width: calc(100vw - var(--act) * 2 - 76px); /* clear of both buttons */
+  transform: translateY(50%);
+  animation: coach-in-side 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.coach.at-jump {
+  left: calc(var(--safe-left) + var(--act) + 30px);
+}
+
+.coach.at-dash {
+  left: auto;
+  right: calc(var(--safe-right) + var(--act) + 30px);
+}
+
+.coach.at-jump .coach-arrow:first-child {
+  display: block;
+  animation: coach-nudge-left 0.45s ease-in-out infinite alternate;
+}
+
+.coach.at-dash .coach-arrow:last-child {
+  display: block;
+  animation: coach-nudge-right 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes coach-in-side {
+  from {
     opacity: 0;
+    transform: translateY(50%) scale(0.6);
+  }
+}
+
+@keyframes coach-nudge-left {
+  to {
+    translate: -6px 0;
+  }
+}
+
+@keyframes coach-nudge-right {
+  to {
+    translate: 6px 0;
   }
 }
 

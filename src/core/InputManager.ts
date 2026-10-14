@@ -48,6 +48,11 @@ export class InputManager {
     this.queue.length = 0;
   }
 
+  /** An action from an on-screen button (the touch JUMP / DASH buttons). */
+  press(action: Action): void {
+    this.push(action);
+  }
+
   private push(action: Action): void {
     this.queue.push(action);
   }

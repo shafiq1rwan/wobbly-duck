@@ -11,6 +11,10 @@ import crown from '@phosphor-icons/core/fill/crown-fill.svg?raw';
 import flag from '@phosphor-icons/core/fill/flag-fill.svg?raw';
 import home from '@phosphor-icons/core/fill/house-fill.svg?raw';
 import tip from '@phosphor-icons/core/fill/lightbulb-fill.svg?raw';
+import jump from '@phosphor-icons/core/fill/arrow-fat-up-fill.svg?raw';
+import dash from '@phosphor-icons/core/fill/lightning-fill.svg?raw';
+import pointLeft from '@phosphor-icons/core/fill/arrow-fat-left-fill.svg?raw';
+import pointRight from '@phosphor-icons/core/fill/arrow-fat-right-fill.svg?raw';
 import lock from '@phosphor-icons/core/fill/lock-simple-fill.svg?raw';
 import ad from '@phosphor-icons/core/fill/monitor-play-fill.svg?raw';
 import pause from '@phosphor-icons/core/fill/pause-fill.svg?raw';
@@ -26,6 +30,10 @@ const ICONS: Record<string, string> = {
   lock,
   skins,
   tip,
+  jump,
+  dash,
+  'point-left': pointLeft,
+  'point-right': pointRight,
   replay,
   crown,
   flag,

@@ -77,6 +77,13 @@ export class GameScene extends Phaser.Scene {
   private revived = false;
   private adPlaying = false;
   private graceTime = 0;
+  /**
+   * First-run coach: the river slows to a stop before the first log (jump) and the first crate
+   * (dash) until the player does the move. Each lesson is remembered once learned.
+   */
+  private coach: 'jump' | 'dash' | null = null;
+  private timeScale = 1;
+  private readonly learned = { jump: loadNumber('learnedJump') === 1, dash: loadNumber('learnedDash') === 1 };
   /** The run has started changing into the lake biome. */
   private lakeStarted = false;
   private dashMeter!: DashMeter;
@@ -148,6 +155,7 @@ export class GameScene extends Phaser.Scene {
       onShopAction: () => this.shopAction(),
       onRevive: () => this.watchReviveAd(),
       onReviveSkip: () => this.skipRevive(),
+      onAction: (action) => this.controls.press(action),
       onPause: () => this.pause(),
       onResume: () => this.resume(),
       onRestart: () => {
@@ -249,7 +257,11 @@ export class GameScene extends Phaser.Scene {
     this.shake.reset();
     this.clearRiver();
     // New players (first 3 runs): a lily pad and a double-jump sky arc early on, so both hints show.
-    if (this.runs < 3) this.spawner.reset(this.worldDistance, [null, 'lily-bounce', null, 'sky-arc']);
+    // New players: a log (jump lesson), a corn line to breathe, a crate (dash lesson), then a lily pad
+    // and a double-jump sky arc.
+    if (!this.learned.jump || !this.learned.dash) this.spawner.reset(this.worldDistance, ['log', 'corn-line', 'crate', 'lily-bounce', null, 'sky-arc']);
+    else if (this.runs < 3) this.spawner.reset(this.worldDistance, [null, 'lily-bounce', null, 'sky-arc']);
+    this.endCoach();
     this.spawner.active = true;
     this.runStart = this.worldDistance;
     this.resetBiome();
@@ -269,7 +281,7 @@ export class GameScene extends Phaser.Scene {
     saveNumber('runs', ++this.runs);
     this.analytics.runStarted();
     this.setState('playing');
-    if (this.runs <= 3) this.ui.showTouchZones();
+    this.hintOnce('seenAutoSwim', 'Your duck swims by itself! Just jump and dash.');
     platform.gameplayStarted();
   }
 
@@ -306,6 +318,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private crash(obstacle: string): void {
+    this.endCoach();
     this.analytics.crashed(obstacle);
     this.duck.kill();
     this.crashDecel = Math.max(CONFIG.world.crashDecel, this.speed / (CONFIG.gameOverDelay * 0.7));
@@ -559,6 +572,12 @@ export class GameScene extends Phaser.Scene {
           else if (action === 'pause') this.skipRevive();
           break;
         case 'playing':
+          if (this.coach) {
+            // The coach waits for its move; everything else (except pause) is ignored meanwhile.
+            if (action === 'pause') this.pause();
+            if (action !== this.coach) break;
+            this.learnCoach();
+          }
           if (action === 'jump') this.duck.requestJump();
           else if (action === 'dash' && !this.duck.requestDash()) this.dashMeter.denied();
           else if (action === 'pause') this.pause();
@@ -589,12 +608,17 @@ export class GameScene extends Phaser.Scene {
     this.stateTime += dt;
     if (this.state === 'gameover') return; // frozen behind the panel; stateTime still drives the restart lockout
 
+    // The coach eases the river to a stop; everything else keeps animating.
+    this.timeScale = this.coach ? Math.max(0, this.timeScale - dt * 6) : 1;
+    const gdt = dt * this.timeScale;
+
     // Sub-step so springs and collisions behave the same at 30, 60 or 144 Hz.
-    const steps = Math.max(1, Math.ceil(dt / CONFIG.maxSubStep));
-    const h = dt / steps;
+    const steps = Math.max(1, Math.ceil(gdt / CONFIG.maxSubStep));
+    const h = gdt / steps;
     this.frameDx = 0;
     for (let i = 0; i < steps; i++) this.step(h);
-    this.marker.update(dt, this.worldDistance, this.duck.anchorX, this.duck.x, this.water, this.view);
+    this.updateCoachAndCues();
+    this.marker.update(gdt, this.worldDistance, this.duck.anchorX, this.duck.x, this.water, this.view);
     this.confetti.update(dt, this.view);
     this.updateBiome();
 
@@ -611,12 +635,49 @@ export class GameScene extends Phaser.Scene {
     this.applyShake(dt);
 
     if (this.state === 'playing' || this.state === 'crashed') this.ui.setDistance(this.runMetres());
-    if (this.state === 'playing') this.analytics.tick(dt, this.runMetres());
+    if (this.state === 'playing') this.analytics.tick(gdt, this.runMetres());
     if (this.state === 'crashed' && this.stateTime >= CONFIG.gameOverDelay) {
       if (this.canRevive()) this.offerRevive();
       else this.showGameOver();
     }
     if (this.debugGfx) this.drawDebug(this.debugGfx);
+  }
+
+  // ------------------------------------------------------------------ first-run coach + button cues
+
+  /** Starts a coach lesson when its obstacle is close enough that doing the move now works. */
+  private updateCoachAndCues(): void {
+    const playing = this.state === 'playing';
+    const next = playing ? this.obstacles.nextAhead(this.duck.x) : null;
+    const dist = next ? next.x - this.duck.x : Infinity;
+    const v = this.speed;
+    const breakable = next ? CONFIG.obstacles.types[next.type].breakable : false;
+    const dashReady = this.duck.dashReadiness >= 1;
+    this.ui.setActionCues(!playing || dashReady, breakable && dist < v * 1.1);
+
+    if (!playing || this.coach || !next || this.duck.airborne) return;
+    // Trigger distances allow for the ~0.17 s the river takes to slow down.
+    if (!this.learned.dash && next.type === 'crate' && dashReady && dist < v * 0.3 + 60) this.beginCoach('dash');
+    else if (!this.learned.jump && !breakable && dist < v * 0.47 + 10) this.beginCoach('jump');
+  }
+
+  private beginCoach(action: 'jump' | 'dash'): void {
+    this.coach = action;
+    this.ui.showCoach(action);
+  }
+
+  /** The player did the move: remember it, and let the river flow again at once. */
+  private learnCoach(): void {
+    if (!this.coach) return;
+    this.learned[this.coach] = true;
+    saveNumber(this.coach === 'jump' ? 'learnedJump' : 'learnedDash', 1);
+    this.endCoach();
+  }
+
+  private endCoach(): void {
+    this.coach = null;
+    this.timeScale = 1;
+    this.ui.showCoach(null);
   }
 
   /** The offer counts down (held while the ad plays), then becomes game over. */

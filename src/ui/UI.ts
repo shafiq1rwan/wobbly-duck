@@ -18,6 +18,8 @@ export interface UIHandlers {
   onShopAction(): void;
   onRevive(): void;
   onReviveSkip(): void;
+  /** Touch JUMP / DASH buttons (fired on touch-down). */
+  onAction(action: 'jump' | 'dash'): void;
   onPause(): void;
   onResume(): void;
   onRestart(): void;
@@ -122,6 +124,8 @@ export class UI {
     bind('btn-shop-action', handlers.onShopAction);
     bind('btn-revive', handlers.onRevive);
     bind('btn-revive-skip', handlers.onReviveSkip);
+    this.bindAction('btn-jump', 'jump');
+    this.bindAction('btn-dash', 'dash');
     this.initShopScroll();
     // Re-fit when the cards' size settles (fonts, images) or the screen changes.
     new ResizeObserver(() => this.fitShopRows()).observe(this.shopGrid);
@@ -379,12 +383,55 @@ export class UI {
     $('menu-hint').style.visibility = visible ? 'visible' : 'hidden';
   }
 
-  /** Touch devices, first few runs: faint JUMP / DASH over the two tap halves, faded out by CSS. */
-  showTouchZones(): void {
-    const el = $('touch-zones');
-    el.hidden = false;
-    el.onanimationend = () => (el.hidden = true); // otherwise it replays whenever the HUD reappears
-    restartAnimation(el, 'show');
+  /** Touch buttons fire on touch-down (no click delay), like the keys. */
+  private bindAction(id: string, action: 'jump' | 'dash'): void {
+    const el = $(id);
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // not also a tap on the screen half
+      el.classList.add('pressed');
+      this.handlers.onAction(action);
+    });
+    const release = () => el.classList.remove('pressed');
+    for (const type of ['pointerup', 'pointercancel', 'pointerleave']) el.addEventListener(type, release);
+  }
+
+  private cues = '';
+
+  /** DASH dims while recharging and glows (with the D / → keys on desktop) when a crate is coming. */
+  setActionCues(dashReady: boolean, crateAhead: boolean): void {
+    const key = `${dashReady}${crateAhead}`;
+    if (key === this.cues) return;
+    this.cues = key;
+    const glow = dashReady && crateAhead;
+    const btn = $('btn-dash');
+    btn.classList.toggle('cooling', !dashReady);
+    btn.classList.toggle('glow', glow);
+    document.querySelectorAll('.controls-hint .key-dash').forEach((k) => k.classList.toggle('glow', glow));
+  }
+
+  /**
+   * First-run coach: what to press for the obstacle ahead, pointing at the button on touch screens
+   * or naming the keys on desktop. `null` hides it.
+   */
+  showCoach(action: 'jump' | 'dash' | null): void {
+    const el = $('coach');
+    for (const a of ['jump', 'dash']) {
+      const on = a === action;
+      $(`btn-${a}`).classList.toggle('coach-target', on);
+      document.querySelectorAll(`.controls-hint .key-${a}`).forEach((k) => k.classList.toggle('coach-target', on));
+    }
+    el.hidden = action === null;
+    el.classList.remove('at-jump', 'at-dash');
+    if (!action) return;
+    const touch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (touch) el.classList.add(`at-${action}`);
+    const text = {
+      jump: touch ? 'Tap JUMP to hop over it!' : 'Press W or ↑ to hop over it!',
+      dash: touch ? 'Tap DASH to smash the crate!' : 'Press D or → to smash the crate!',
+    };
+    $('coach-text').textContent = text[action];
+    this.toastEl.hidden = true; // one message at a time
   }
 
   setDistance(metres: number): void {

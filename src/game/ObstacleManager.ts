@@ -108,6 +108,15 @@ export class ObstacleManager {
     }
   }
 
+  /** The nearest obstacle not yet passed by something at `x` (for hints and the first-run coach). */
+  nextAhead(x: number): Obstacle | null {
+    let next: Obstacle | null = null;
+    for (const o of this.pool) {
+      if (o.active && o.x + o.box.halfW > x && (!next || o.x < next.x)) next = o;
+    }
+    return next;
+  }
+
   forEachActive(fn: (box: Box) => void): void {
     for (const o of this.pool) if (o.active) fn(o.box);
   }
