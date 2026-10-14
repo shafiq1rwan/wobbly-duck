@@ -39,6 +39,8 @@ MANIFEST = [
     ('parallax-no-outline-v2/clouds.png', 'bg-clouds.webp', (485, 752), 300, 85),
     ('parallax-no-outline-v2/distant-rocks.png', 'bg-rocks.webp', (427, 662), 240, 85),
     ('parallax-no-outline-v2/palm-islands.png', 'bg-palms.webp', (303, 756), 400, 85),
+    ('river-background-v1/willow-banks.png', 'bg-river-willows.webp', (470, 748), 320, 85),
+    ('river-background-v1/reed-banks.png', 'bg-river-reeds.webp', (322, 689), 160, 85),
 ]
 
 
