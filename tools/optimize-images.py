@@ -27,6 +27,7 @@ MANIFEST = [
     # Optional obstacle art with outlines matching each material's colour.
     ('obstacles-colour-outline-v2/log.png', 'obstacle-log-v2.webp', (233, 515), 64, 90),
     ('obstacles-colour-outline-v2/box.png', 'obstacle-box-v2.webp', (257, 1067), 160, 90),
+    ('obstacles-colour-outline-v2/rock.png', 'obstacle-rock-v2.webp', None, 192, 90),
     ('obstacles-colour-outline-v2/mid-air-loop.png', 'obstacle-loop-v2.webp', (118, 1116), 320, 90),
     # Parallax layers: crop to the opaque band (bottom row = art baseline).
     ('parallax-no-outline-v2/clouds.png', 'bg-clouds.webp', (485, 752), 300, 85),
