@@ -12,7 +12,7 @@ import { DuckView } from '../game/DuckView';
 import { FoodManager, type FoodKind } from '../game/FoodManager';
 import { ObstacleManager, type Obstacle } from '../game/ObstacleManager';
 import { Parade, type ParadeEvents } from '../game/Parade';
-import { Spawner, type Entry } from '../game/Patterns';
+import { Spawner, type Entry, type FoodRole } from '../game/Patterns';
 import { ScorePopups } from '../game/ScorePopups';
 import { Splashes } from '../game/Splashes';
 import { Water } from '../game/Water';
@@ -26,12 +26,16 @@ const DEPTH = { background: 0, waterBack: 5, obstacles: 10, food: 12, ducklings:
 const DEBUG = new URLSearchParams(window.location.search).has('debug');
 /** Ignore restart input for a moment after the game-over screen appears (prevents mash-restarts). */
 const RESTART_LOCKOUT = 0.35;
-/** Sparkle colours per food. */
-const FOOD_SPARKLE: Record<FoodKind, number[]> = {
-  corn: [0xffffff, 0xffe45c, 0xffcf3a],
-  peas: [0xffffff, 0xc9f28d, 0x7ccf4f],
-  seed: [0xffffff, 0xf3dcb0, 0xc08a58],
-};
+/** Picks a kernel for a pattern role, by the weights in CONFIG.food.roles. */
+function pickKernel(role: FoodRole): FoodKind {
+  const weights = CONFIG.food.roles[role] as Partial<Record<FoodKind, number>>;
+  let r = Math.random() * Object.values(weights).reduce((sum, w) => sum + (w ?? 0), 0);
+  for (const [kind, w] of Object.entries(weights) as [FoodKind, number][]) {
+    r -= w;
+    if (r <= 0) return kind;
+  }
+  return 'yellow';
+}
 const CRATE_CHUNKS = [0xf3b65a, 0xe09a3e, 0xc77e36];
 
 export class GameScene extends Phaser.Scene {
@@ -372,29 +376,31 @@ export class GameScene extends Phaser.Scene {
       }
     } else if (entry.food) {
       const F = CONFIG.food;
+      const kind = pickKernel(entry.food);
       if (entry.on) {
         // Resting on the obstacle: just above its top (heights are relative to the duck's swim position).
         const t = CONFIG.obstacles.types[entry.on];
-        const halfFood = 33 * F.kinds[entry.food].scale;
+        const halfFood = 40 * F.kinds[kind].scale; // ≈ half the kernel body (80 px in the 160 px texture)
         const h = t.top + F.onTopGap + halfFood - CONFIG.duck.floatOffset;
-        this.food.spawn(entry.food, x, h, t.waveFollow, true, this.water);
+        this.food.spawn(kind, x, h, t.waveFollow, true, this.water);
       } else if (entry.h !== undefined) {
-        this.food.spawn(entry.food, x, entry.h, 0, false, this.water); // along a jump arc
+        this.food.spawn(kind, x, entry.h, 0, false, this.water); // along a jump arc
       } else {
-        this.food.spawn(entry.food, x, F.lowHeight, 1, false, this.water); // floating on the water
+        this.food.spawn(kind, x, F.lowHeight, 1, false, this.water); // floating on the water
       }
     }
   };
 
   private readonly onPickup = (x: number, y: number, kind: FoodKind): void => {
-    const points = CONFIG.food.kinds[kind].points * this.parade.multiplier;
+    const base = CONFIG.food.kinds[kind].points;
+    const points = base * this.parade.multiplier;
     this.score += points;
     this.ui.setScore(this.score);
-    const bonus = kind === 'seed';
+    const bonus = base >= CONFIG.food.bonusPoints;
     this.popups.show(x, y, points, bonus || this.parade.count >= 3);
     const effect = CONFIG.food.pickup;
-    this.splashes.sparkle(x, y, bonus ? effect.bonusSparkCount : effect.sparkCount, FOOD_SPARKLE[kind]);
-    this.splashes.pickupRing(x, y, FOOD_SPARKLE[kind][1], bonus);
+    this.splashes.sparkle(x, y, bonus ? effect.bonusSparkCount : effect.sparkCount, CONFIG.food.kinds[kind].sparkle);
+    this.splashes.pickupRing(x, y, CONFIG.food.kinds[kind].sparkle[1], bonus);
     this.audio.play(bonus ? 'bonus' : 'pickup');
   };
 

@@ -17,8 +17,8 @@ killing the mother.
 
 1. **Lost ducklings** float on the river, bobbing and peeping, with a soft glow ring so they read
    as "pick me up". Swim (or jump) into one and it joins the parade.
-2. **The parade** follows behind you in a line, about 40 units apart, each one bobbing and
-   squishing on its own. Up to **6** ducklings.
+2. **The parade** follows behind you in a line, about 52 units apart (tighter on narrow phones so
+   all six fit), each one bobbing and squishing on its own. Up to **6** ducklings, at 68% of the duck's size.
 3. **They copy your jumps** — each one jumps a moment after the one in front. They don't dash.
 4. **If an obstacle hits a duckling**, only that duckling is lost: it tumbles off with a sad peep
    and a splash, floats away behind, and the line closes the gap. The run continues.
@@ -43,8 +43,10 @@ where a duckling would be forced into an obstacle.
 
 ## Scoring and UI (Cookie Run style)
 
-- **Score per pickup:** corn kernel **50**, peas **100**, seed **150** (rarest), each
-  × `(1 + ducklings)` — ×2 with one duckling, up to ×7 with six.
+- **Score per pickup** (eight corn kernels): yellow **50**, orange **75**, honey **100**, pink **150**,
+  purple **200**, ice **250**, rainbow **500**, crown **1,000** — each × `(1 + ducklings)`, ×2 with
+  one duckling up to ×7 with six. Patterns ask for a role (`common` trails, `mid` arcs, `rare` best
+  spots) and the kernel is picked by weight (`CONFIG.food.roles`).
 - **HUD:** the run score, big at the top centre; distance chip and a parade chip (`×N`) at the top
   left. The parade chip pops when a duckling joins, shakes red when one is lost, and hides with an
   empty parade. Each pickup shows a floating `+N` (yellow for seeds or big multipliers).

@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import type { FoodKind } from './FoodManager';
+
+/** What a pattern asks for; the actual kernel is picked by weight (CONFIG.food.roles). */
+export type FoodRole = keyof typeof CONFIG.food.roles;
 import type { ObstacleType } from './ObstacleManager';
 
 /**
@@ -17,7 +19,7 @@ import type { ObstacleType } from './ObstacleManager';
 export interface Entry {
   t: number;
   obstacle?: ObstacleType;
-  food?: FoodKind;
+  food?: FoodRole;
   /** Food along a jump: the duck's centre above its swimming position. Omitted = floating on the water. */
   h?: number;
   /** Food resting on top of this obstacle type (spawned with it, at the same time). */
@@ -64,18 +66,18 @@ const JUMP = (() => {
 const ob = (t: number, obstacle: ObstacleType): Entry => ({ t, obstacle });
 
 /** `n` food items floating on the water in a row. */
-function line(t0: number, n: number, kind: FoodKind, step = 0.12): Entry[] {
+function line(t0: number, n: number, kind: FoodRole, step = 0.12): Entry[] {
   return Array.from({ length: n }, (_, i) => ({ t: t0 + i * step, food: kind }));
 }
 
 /** Food resting on top of the crate at time `t` (collected by smashing it). */
-function lid(t: number, ...kinds: FoodKind[]): Entry[] {
+function lid(t: number, ...kinds: FoodRole[]): Entry[] {
   const step = kinds.length > 2 ? 0.075 : 0.09;
   return kinds.map((kind, i) => ({ t: t + (i - (kinds.length - 1) / 2) * step, food: kind, on: 'crate' as const }));
 }
 
 /** A tight cluster right above the obstacle at time `tCenter`, where a well-timed jump passes. */
-function crown(tCenter: number, n: number, kind: FoodKind, apexKind?: FoodKind): Entry[] {
+function crown(tCenter: number, n: number, kind: FoodRole, apexKind?: FoodRole): Entry[] {
   const T = JUMP.airtime;
   return Array.from({ length: n }, (_, i) => {
     const tau = T * (0.38 + (0.24 * i) / Math.max(1, n - 1));
@@ -85,7 +87,7 @@ function crown(tCenter: number, n: number, kind: FoodKind, apexKind?: FoodKind):
 }
 
 /** `n` food items along a jump whose apex is at time `tCenter` (over an obstacle, or open water). */
-function arc(tCenter: number, n: number, kind: FoodKind, apexKind?: FoodKind): Entry[] {
+function arc(tCenter: number, n: number, kind: FoodRole, apexKind?: FoodRole): Entry[] {
   const T = JUMP.airtime;
   return Array.from({ length: n }, (_, i) => {
     const tau = T * (0.14 + (0.72 * i) / Math.max(1, n - 1));
@@ -110,29 +112,29 @@ const PATTERNS: Pattern[] = [
   pattern('log', 0, 3, ob(0, 'log')),
   pattern('rock', 0, 2, ob(0, 'rock')),
   pattern('crate', 0, 1, ob(0, 'crate')),
-  pattern('crate-lid', 0, 2, ob(0, 'crate'), lid(0, 'corn', 'corn')),
-  pattern('log-crown', 0, 2, ob(0, 'log'), crown(0, 3, 'corn')),
-  pattern('corn-line', 0, 2, line(0, 5, 'corn')),
-  pattern('log-arc', 0, 3, ob(0, 'log'), arc(0, 5, 'corn')),
-  pattern('crate-peas', 0, 1, ob(0, 'crate'), line(0.55, 3, 'peas')),
+  pattern('crate-lid', 0, 2, ob(0, 'crate'), lid(0, 'common', 'common')),
+  pattern('log-crown', 0, 2, ob(0, 'log'), crown(0, 3, 'common')),
+  pattern('corn-line', 0, 2, line(0, 5, 'common')),
+  pattern('log-arc', 0, 3, ob(0, 'log'), arc(0, 5, 'common')),
+  pattern('crate-peas', 0, 1, ob(0, 'crate'), line(0.55, 3, 'mid')),
 
   // Tier 1 — variety and some two-obstacle patterns.
-  pattern('rock-arc-bonus', 1, 2, ob(0, 'rock'), arc(0, 5, 'corn', 'seed')),
-  pattern('log-log', 1, 2, ob(0, 'log'), ob(1.4, 'log'), arc(1.4, 3, 'peas')),
-  pattern('crate-log', 1, 2, ob(0, 'crate'), lid(0, 'corn', 'corn'), ob(1.6, 'log')),
-  pattern('crate-lid-bonus', 1, 1, ob(0, 'crate'), lid(0, 'seed')),
-  pattern('rock-crown', 1, 1, ob(0, 'rock'), crown(0, 3, 'corn', 'seed')),
-  pattern('log-rock', 1, 2, ob(0, 'log'), ob(1.5, 'rock'), arc(1.5, 3, 'peas')),
-  pattern('rock-crate', 1, 1, ob(0, 'rock'), ob(1.45, 'crate'), line(1.95, 3, 'corn')),
-  pattern('open-arc', 1, 1, line(0, 3, 'corn'), arc(0.9, 6, 'peas', 'seed')),
+  pattern('rock-arc-bonus', 1, 2, ob(0, 'rock'), arc(0, 5, 'common', 'rare')),
+  pattern('log-log', 1, 2, ob(0, 'log'), ob(1.4, 'log'), arc(1.4, 3, 'mid')),
+  pattern('crate-log', 1, 2, ob(0, 'crate'), lid(0, 'common', 'common'), ob(1.6, 'log')),
+  pattern('crate-lid-bonus', 1, 1, ob(0, 'crate'), lid(0, 'rare')),
+  pattern('rock-crown', 1, 1, ob(0, 'rock'), crown(0, 3, 'common', 'rare')),
+  pattern('log-rock', 1, 2, ob(0, 'log'), ob(1.5, 'rock'), arc(1.5, 3, 'mid')),
+  pattern('rock-crate', 1, 1, ob(0, 'rock'), ob(1.45, 'crate'), line(1.95, 3, 'common')),
+  pattern('open-arc', 1, 1, line(0, 3, 'common'), arc(0.9, 6, 'mid', 'rare')),
 
   // Tier 2 — faster, longer combinations, more reward.
-  pattern('log-crate-rock', 2, 2, ob(0, 'log'), ob(1.4, 'crate'), ob(2.95, 'rock'), arc(2.95, 5, 'corn', 'seed')),
-  pattern('rock-rock', 2, 2, ob(0, 'rock'), arc(0, 3, 'corn'), ob(1.35, 'rock'), arc(1.35, 3, 'corn')),
-  pattern('triple-log', 2, 1, ob(0, 'log'), ob(1.3, 'log'), ob(2.6, 'log'), arc(1.3, 5, 'peas')),
+  pattern('log-crate-rock', 2, 2, ob(0, 'log'), ob(1.4, 'crate'), ob(2.95, 'rock'), arc(2.95, 5, 'common', 'rare')),
+  pattern('rock-rock', 2, 2, ob(0, 'rock'), arc(0, 3, 'common'), ob(1.35, 'rock'), arc(1.35, 3, 'common')),
+  pattern('triple-log', 2, 1, ob(0, 'log'), ob(1.3, 'log'), ob(2.6, 'log'), arc(1.3, 5, 'mid')),
   // Two quick crates: dash through both (cooldown 0.7 s) — or jump them with good timing.
-  pattern('crate-crate', 2, 1, ob(0, 'crate'), lid(0, 'corn'), ob(1.05, 'crate'), lid(1.05, 'corn'), line(1.55, 4, 'corn')),
-  pattern('seed-run', 2, 1, ob(0, 'log'), arc(0, 5, 'seed'), ob(1.5, 'rock')),
+  pattern('crate-crate', 2, 1, ob(0, 'crate'), lid(0, 'common'), ob(1.05, 'crate'), lid(1.05, 'common'), line(1.55, 4, 'common')),
+  pattern('seed-run', 2, 1, ob(0, 'log'), arc(0, 5, 'rare'), ob(1.5, 'rock')),
 ];
 
 // ------------------------------------------------------------------ spawner
@@ -264,7 +266,7 @@ export class Spawner {
     const step = trail.step * speed;
     for (let at = start; at <= end; at += step) {
       if (Math.abs(at - ducklingAt) < 0.22 * speed) continue; // leave room around the duckling
-      const food: FoodKind = Math.random() < trail.peasChance ? 'peas' : 'corn';
+      const food: FoodRole = Math.random() < trail.peasChance ? 'mid' : 'common';
       this.queue.push({ at, entry: { t: 0, food } });
     }
   }

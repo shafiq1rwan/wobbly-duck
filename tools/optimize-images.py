@@ -35,6 +35,15 @@ MANIFEST = [
     ('obstacles-colour-outline-v2/box.png', 'obstacle-box-v2.webp', (257, 1067), 160, 90),
     ('obstacles-colour-outline-v2/rock.png', 'obstacle-rock-v2.webp', None, 192, 90),
     ('obstacles-colour-outline-v2/mid-air-loop.png', 'obstacle-loop-v2.webp', (118, 1116), 320, 90),
+    # Corn-kernel collectibles (split by tools/split-kernel-sheet.py): square, body centred.
+    ('kernels-v1/yellow.png', 'kernel-yellow.webp', None, 160, 90),
+    ('kernels-v1/orange.png', 'kernel-orange.webp', None, 160, 90),
+    ('kernels-v1/honey.png', 'kernel-honey.webp', None, 160, 90),
+    ('kernels-v1/pink.png', 'kernel-pink.webp', None, 160, 90),
+    ('kernels-v1/purple.png', 'kernel-purple.webp', None, 160, 90),
+    ('kernels-v1/ice.png', 'kernel-ice.webp', None, 160, 90),
+    ('kernels-v1/rainbow.png', 'kernel-rainbow.webp', None, 160, 90),
+    ('kernels-v1/crown.png', 'kernel-crown.webp', None, 160, 90),
     # Parallax layers: crop to the opaque band (bottom row = art baseline).
     ('parallax-no-outline-v2/clouds.png', 'bg-clouds.webp', (485, 752), 300, 85),
     ('parallax-no-outline-v2/distant-rocks.png', 'bg-rocks.webp', (427, 662), 240, 85),

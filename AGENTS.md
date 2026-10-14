@@ -6,6 +6,7 @@ then the doc that matches your task:
 - UI, HUD, menus → [docs/UI_SPEC.md](docs/UI_SPEC.md) (reference: [docs/reference/ui-reference.png](docs/reference/ui-reference.png))
 - Art and audio assets → [docs/ASSET_SPEC.md](docs/ASSET_SPEC.md)
 - The twist (Duckling Parade) → [docs/DUCKLING_PARADE.md](docs/DUCKLING_PARADE.md)
+- Analytics / Poki Game Events → [docs/ANALYTICS.md](docs/ANALYTICS.md)
 
 ## The game
 

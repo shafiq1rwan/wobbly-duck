@@ -12,7 +12,7 @@ class Food {
   active = false;
   collecting = false;
   pickupTime = 0;
-  kind: FoodKind = 'corn';
+  kind: FoodKind = 'yellow';
   x = 0;
   y = 0;
   /** Height of the duck's centre (above its swimming position) at which this food sits. */
@@ -27,7 +27,7 @@ class Food {
 }
 
 /**
- * Pooled collectibles (corn kernels, peas, big bonus corn). Food on the water and on top of obstacles
+ * Pooled corn-kernel collectibles (eight kinds, see CONFIG.food.kinds). Food on the water and on top of obstacles
  * rides the waves; food along a jump arc hovers at a fixed height. All of it bobs and pulses gently,
  * and is purely optional.
  */
@@ -37,7 +37,7 @@ export class FoodManager {
 
   constructor(scene: Phaser.Scene, depth: number) {
     for (let i = 0; i < F.poolSize; i++) {
-      const sprite = scene.add.image(0, 0, F.kinds.corn.key).setDepth(depth).setVisible(false);
+      const sprite = scene.add.image(0, 0, F.kinds.yellow.key).setDepth(depth).setVisible(false);
       this.pool.push(new Food(sprite));
     }
   }

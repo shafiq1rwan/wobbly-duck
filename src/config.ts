@@ -299,13 +299,31 @@ export const CONFIG = {
   /** Collectibles. Heights are measured as the duck's centre above its swimming position. */
   food: {
     poolSize: 90,
+    /**
+     * Corn-kernel collectibles (assets-src/kernels-v1). Points are per pickup, before the parade
+     * multiplier (× 1 + ducklings); `sparkle` colours the pickup effect.
+     */
     kinds: {
-      // Score per pickup, before the parade multiplier (× 1 + ducklings).
-      corn: { key: 'food-corn', file: 'food-corn-v2.webp', scale: 0.5, points: 50 },
-      peas: { key: 'food-peas', file: 'food-peas-v2.webp', scale: 0.5, points: 100 },
-      /** Rarest and most valuable. TODO: switch to the v2 seed (food-seed-v2.webp) when Codex delivers it. */
-      seed: { key: 'food-seed', file: 'food-seed.webp', scale: 0.55, points: 150 },
+      yellow: { key: 'kernel-yellow', file: 'kernel-yellow.webp', scale: 0.5, points: 50, sparkle: [0xffffff, 0xffe45c, 0xffcf3a] },
+      orange: { key: 'kernel-orange', file: 'kernel-orange.webp', scale: 0.5, points: 75, sparkle: [0xffffff, 0xffc04a, 0xff9a2e] },
+      honey: { key: 'kernel-honey', file: 'kernel-honey.webp', scale: 0.52, points: 100, sparkle: [0xffffff, 0xffd36b, 0xe89a1e] },
+      pink: { key: 'kernel-pink', file: 'kernel-pink.webp', scale: 0.52, points: 150, sparkle: [0xffffff, 0xffb3c8, 0xff6f96] },
+      purple: { key: 'kernel-purple', file: 'kernel-purple.webp', scale: 0.55, points: 200, sparkle: [0xffffff, 0xd6b3ff, 0xffe45c] },
+      ice: { key: 'kernel-ice', file: 'kernel-ice.webp', scale: 0.55, points: 250, sparkle: [0xffffff, 0xbfeaff, 0x7cc8ff] },
+      rainbow: { key: 'kernel-rainbow', file: 'kernel-rainbow.webp', scale: 0.58, points: 500, sparkle: [0xff8a8a, 0xffe45c, 0x7cd67c, 0x7cc8ff] },
+      crown: { key: 'kernel-crown', file: 'kernel-crown.webp', scale: 0.62, points: 1000, sparkle: [0xffffff, 0xffe45c, 0xff5a5a] },
     },
+    /**
+     * Patterns ask for a role; the actual kernel is picked by weight. Trails use `common`, jump arcs
+     * `mid`, the best spots (arc tops, crowns, crate lids) `rare`.
+     */
+    roles: {
+      common: { yellow: 80, orange: 20 },
+      mid: { honey: 50, pink: 50 },
+      rare: { purple: 40, ice: 40, rainbow: 17, crown: 3 },
+    },
+    /** Pickups worth at least this many base points get the bigger sparkle and chime. */
+    bonusPoints: 200,
     /** Added to the duck's collider radius. Generous: missing food should feel like a choice. */
     pickupRadius: 24,
     /** Food on the water floats this high (duck-centre units) — a small gap above the surface. */
@@ -338,10 +356,12 @@ export const CONFIG = {
   ducklings: {
     max: 6,
     /** Size relative to the duck (sprite and physics). */
-    size: 0.55,
+    size: 0.68,
     /** Placeholder colouring until the duckling art arrives. */
     tint: 0xfff3b0,
-    spacing: 38,
+    /** Gap between ducklings; shrinks on narrow screens so a full parade stays on screen. */
+    spacing: 52,
+    minSpacing: 34,
     /** Extra jump delay per place in line (s). 6 × 18 ms still leaves a ≥ 121 ms window for everyone. */
     extraLag: 0.018,
     /** How quickly followers slide into their slot (1/s). */
