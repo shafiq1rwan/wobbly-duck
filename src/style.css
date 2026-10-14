@@ -542,8 +542,85 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.chip-icon {
+  width: calc(var(--hud-h) * 0.62);
+  height: calc(var(--hud-h) * 0.62);
+  margin-left: -4px;
+}
+
 .chip.pop {
   animation: chip-pop 180ms ease-out;
+}
+
+.chip.shake {
+  animation: chip-shake 400ms ease-out;
+  background: rgba(190, 50, 60, 0.85);
+}
+
+@keyframes chip-shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Run score, top centre (Cookie Run style). */
+.hud-score {
+  position: absolute;
+  top: calc(var(--safe-top) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(30px, 8vmin, 48px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--white);
+  text-shadow: var(--o3), 0 4px 0 var(--ink);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.hud-score.bump {
+  animation: score-bump 160ms ease-out;
+}
+
+@keyframes score-bump {
+  50% {
+    transform: translateX(-50%) scale(1.12);
+  }
+}
+
+.toast {
+  position: absolute;
+  top: calc(var(--safe-top) + clamp(52px, 12vmin, 74px));
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(90vw, 460px);
+  padding: 6px 14px 8px;
+  font-size: clamp(14px, 3.8vmin, 18px);
+  font-weight: 600;
+  text-align: center;
+  color: var(--white);
+  background: var(--chip);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.toast.show {
+  animation: fade-in 200ms ease-out;
+}
+
+.go-score {
+  align-self: center;
+  font-size: clamp(40px, 11vmin, 64px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--yellow);
+  text-shadow: var(--o3), 0 5px 0 var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes chip-pop {

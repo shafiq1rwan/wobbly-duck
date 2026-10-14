@@ -19,9 +19,9 @@
     <link rel="preload" as="image" href="./assets/obstacle-rock-v2.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/food-peas-v2.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/food-corn-v2.webp" type="image/webp" />
-    <link rel="preload" as="image" href="./assets/food-bonus-corn-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/food-seed.webp" type="image/webp" />
     <!-- Sky colour for the first paint, before CSS and the game canvas arrive. -->
-    <style>html { background: #3ac3fd; }</style>
+    <style>html { background: #81cdeb; }</style>
   </head>
   <body>
 
@@ -33,7 +33,13 @@
       <div id="hud" class="screen" hidden>
         <div class="hud-chips">
           <div class="chip"><span id="hud-distance">0</span>&nbsp;m</div>
+          <!-- Parade multiplier: shown once a duckling has joined. -->
+          <div id="chip-parade" class="chip" hidden>
+            <img class="chip-icon" src="./favicon.svg" alt="" /><span>×<span id="hud-mult">1</span></span>
+          </div>
         </div>
+        <div id="hud-score" class="hud-score">0</div>
+        <div id="toast" class="toast" hidden></div>
         <button id="btn-pause" class="icon-btn icon-btn-square" aria-label="Pause">
           <svg class="icon"><use href="#i-pause" /></svg>
         </button>
@@ -56,13 +62,13 @@
           <div class="best-badge">
             <svg class="crown"><use href="#i-crown" /></svg>
             <div class="best-text">
-              <span class="best-label">Best Distance</span>
-              <span class="best-value"><span id="menu-best">0</span> m</span>
+              <span class="best-label">Best Score</span>
+              <span class="best-value"><span id="menu-best">0</span></span>
             </div>
           </div>
-          <!-- Corn bank: collected across all runs; will unlock duck skins. -->
-          <div class="bank" aria-label="Corn collected">
-            <img class="bank-icon" src="./assets/food-corn-v2.webp" alt="" /><span id="menu-bank">0</span>
+          <!-- Score bank: every run's score added up; will unlock duck skins. -->
+          <div class="bank" aria-label="Total score">
+            <svg class="icon bank-icon"><use href="#i-star" /></svg><span id="menu-bank">0</span>
           </div>
         </div>
         <p id="menu-hint" class="hint">
@@ -94,21 +100,22 @@
       <div id="gameover" class="screen panel-screen dim" hidden>
         <div class="modal">
           <h2 class="title">Game Over</h2>
+          <div class="go-score" id="go-score">0</div>
           <div class="stats-card">
             <div class="stat-row">
               <span class="stat-label"><svg class="icon stat-icon"><use href="#i-flag" /></svg>Distance</span>
               <strong><span id="go-distance">0</span> m</strong>
             </div>
             <div class="stat-row">
-              <span class="stat-label"><img class="stat-icon" src="./assets/food-corn-v2.webp" alt="" />Corn</span>
-              <strong id="go-food">0</strong>
+              <span class="stat-label"><img class="stat-icon" src="./favicon.svg" alt="" />Ducklings</span>
+              <strong id="go-parade">0</strong>
             </div>
           </div>
           <div id="go-best-badge" class="best-badge">
             <svg class="crown"><use href="#i-crown" /></svg>
             <div class="best-text">
-              <span id="go-best-label" class="best-label">Best Distance</span>
-              <span class="best-value"><span id="go-best">0</span> m</span>
+              <span id="go-best-label" class="best-label">Best Score</span>
+              <span class="best-value"><span id="go-best">0</span></span>
             </div>
           </div>
           <div class="btn-row">

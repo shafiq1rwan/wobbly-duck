@@ -1,6 +1,6 @@
 import { CONFIG } from '../config';
 
-export type Sfx = 'jump' | 'dash' | 'splashSmall' | 'splashBig' | 'hit' | 'click' | 'pickup' | 'bonus' | 'crate';
+export type Sfx = 'jump' | 'dash' | 'splashSmall' | 'splashBig' | 'hit' | 'click' | 'pickup' | 'bonus' | 'crate' | 'peep' | 'peepSad';
 
 /** Ignore repeats of the same effect closer together than this (s). */
 const MIN_REPEAT = 0.04;
@@ -85,6 +85,16 @@ export class AudioManager {
         this.tone('sine', 660, 700, 0.09, 0.13);
         this.tone('sine', 880, 920, 0.09, 0.13, 0.07);
         this.tone('sine', 1320, 1400, 0.16, 0.13, 0.14);
+        break;
+      case 'peep':
+        // Cheerful double chirp: a duckling joined.
+        this.tone('sine', 1500, 2100, 0.07, 0.13);
+        this.tone('sine', 1700, 2400, 0.08, 0.12, 0.09);
+        break;
+      case 'peepSad':
+        // Falling double chirp: a duckling was knocked off.
+        this.tone('sine', 1600, 1000, 0.12, 0.13);
+        this.tone('sine', 1300, 750, 0.16, 0.11, 0.14);
         break;
       case 'crate':
         this.noiseBurst(0.2, 0.22, 'bandpass', 1300, 380, 1.4);

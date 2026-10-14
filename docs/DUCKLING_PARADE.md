@@ -5,8 +5,13 @@ your jumps a beat later. Every duckling multiplies the corn you earn, so don't l
 
 The mother duck is the existing duck sprite — only the ducklings need new art.
 
-Status: **agreed direction, not built yet.** Numbers below are starting values; they all go in
-`src/config.ts` (`ducklings` section) so we can tune them.
+Status: **built** with a placeholder duckling (the duck sprite at 55% size, tinted lighter) until
+the duckling art arrives. Tuning lives in `src/config.ts` (`ducklings`, `food.kinds`); the code is
+`src/game/Parade.ts`.
+
+Tested with an in-game bot: a full parade of 6 survives every difficulty tier when jumping slightly
+early (0 losses up to 2,000 m); jumping 60 ms late loses tail ducklings at low speed without
+killing the mother.
 
 ## How it plays
 
@@ -36,18 +41,19 @@ is enough for 3–4 ducklings; for 5–6 you need to jump slightly early.
 Ducklings use their own small hit circles and the same obstacles as you. Food is never placed
 where a duckling would be forced into an obstacle.
 
-## Scoring and UI
+## Scoring and UI (Cookie Run style)
 
-- **Corn is the currency.** Corn collected in a run is added to a saved lifetime total (the
-  "corn bank", shown on the main menu), which will be spent to **unlock duck skins** (Codex has
-  already made mallard, Pekin and khaki variants in `assets-src/duck-variants-v1/`).
-- **Multiplier:** each pickup is worth `points × (1 + ducklings)` — ×2 with one duckling, up to ×7
-  with six. A long parade is how you earn skins faster.
-- **HUD:** no corn counter (kept minimal). One chip under the distance: duckling icon + `×3`. It
-  pops when a duckling joins and shakes red when one is lost. Hidden until your first rescue.
-  Each pickup shows a small floating `+N` so the multiplier is visible.
-- **Game Over:** rows Distance, Corn `+N` (already built), and **Ducklings** (biggest parade this run).
-- **Saved:** best parade (`bestParade`) next to best distance.
+- **Score per pickup:** corn kernel **50**, peas **100**, seed **150** (rarest), each
+  × `(1 + ducklings)` — ×2 with one duckling, up to ×7 with six.
+- **HUD:** the run score, big at the top centre; distance chip and a parade chip (`×N`) at the top
+  left. The parade chip pops when a duckling joins, shakes red when one is lost, and hides with an
+  empty parade. Each pickup shows a floating `+N` (yellow for seeds or big multipliers).
+- **Game Over:** the score in big yellow numbers, rows Distance and Ducklings (biggest parade),
+  and the Best Score badge.
+- **Records (saved):** `bestScore` is the main record (menu + Game Over); `best` (distance) and
+  `bestParade` are kept too.
+- **Currency:** every run's score is added to `scoreBank` (shown on the menu with a star), to be
+  spent on **duck skins** later (mallard, Pekin and khaki already exist in `assets-src/duck-variants-v1/`).
 - **First time only:** a small hint when the first duckling appears: "Swim into ducklings — they
   follow you!"
 

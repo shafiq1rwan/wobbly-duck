@@ -11,7 +11,9 @@ import { Duck } from '../game/Duck';
 import { DuckView } from '../game/DuckView';
 import { FoodManager, type FoodKind } from '../game/FoodManager';
 import { ObstacleManager, type Obstacle } from '../game/ObstacleManager';
+import { Parade, type ParadeEvents } from '../game/Parade';
 import { Spawner, type Entry } from '../game/Patterns';
+import { ScorePopups } from '../game/ScorePopups';
 import { Splashes } from '../game/Splashes';
 import { Water } from '../game/Water';
 import { platform } from '../platform/Platform';
@@ -20,7 +22,7 @@ import { UI } from '../ui/UI';
 type State = 'menu' | 'playing' | 'paused' | 'crashed' | 'gameover';
 
 /** Background uses 0–4 (sky + parallax layers); the ocean body sits behind obstacles, the water tint in front. */
-const DEPTH = { background: 0, waterBack: 5, obstacles: 10, food: 12, duck: 20, water: 30, splashes: 35, meter: 36, debug: 100 };
+const DEPTH = { background: 0, waterBack: 5, obstacles: 10, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, debug: 100 };
 const DEBUG = new URLSearchParams(window.location.search).has('debug');
 /** Ignore restart input for a moment after the game-over screen appears (prevents mash-restarts). */
 const RESTART_LOCKOUT = 0.35;
@@ -28,7 +30,7 @@ const RESTART_LOCKOUT = 0.35;
 const FOOD_SPARKLE: Record<FoodKind, number[]> = {
   corn: [0xffffff, 0xffe45c, 0xffcf3a],
   peas: [0xffffff, 0xc9f28d, 0x7ccf4f],
-  bigCorn: [0xffffff, 0xffe45c, 0xffb52e],
+  seed: [0xffffff, 0xf3dcb0, 0xc08a58],
 };
 const CRATE_CHUNKS = [0xf3b65a, 0xe09a3e, 0xc77e36];
 
@@ -46,6 +48,8 @@ export class GameScene extends Phaser.Scene {
   private readonly spawner = new Spawner();
   private background!: Background;
   private splashes!: Splashes;
+  private parade!: Parade;
+  private popups!: ScorePopups;
   private dashMeter!: DashMeter;
   private readonly shake = new CameraShake();
   private audio!: AudioManager;
@@ -58,9 +62,16 @@ export class GameScene extends Phaser.Scene {
   private runStart = 0;
   private stateTime = 0;
   private best = 0;
-  /** Food points this run, and across all runs (saved). */
-  private foodCount = 0;
-  private foodTotal = 0;
+  /** Run score (food points × parade multiplier), best score, and the bank of all scores (for skins). */
+  private score = 0;
+  private bestScore = 0;
+  private scoreBank = 0;
+  /** Biggest parade this run, and ever. */
+  private maxParade = 0;
+  private bestParade = 0;
+  /** Mother jump counter last seen, and world distance scrolled this frame (for popups). */
+  private lastJumpCount = 0;
+  private frameDx = 0;
   /** Deceleration after a crash, chosen so the world has stopped before the game-over panel. */
   private crashDecel: number = CONFIG.world.crashDecel;
   /** Runs started on this device (drives the first-visit controls hint). */
@@ -83,6 +94,8 @@ export class GameScene extends Phaser.Scene {
     this.duckView = new DuckView(this, DEPTH.duck);
     this.water = new Water(this, DEPTH.waterBack, DEPTH.water, this.view);
     this.splashes = new Splashes(this, DEPTH.splashes);
+    this.parade = new Parade(this, DEPTH.ducklings, this.paradeEvents);
+    this.popups = new ScorePopups(this, DEPTH.popups);
     this.dashMeter = new DashMeter(this, DEPTH.meter);
     this.audio = new AudioManager(loadNumber('muted') === 1);
     this.duck = new Duck(0);
@@ -105,7 +118,9 @@ export class GameScene extends Phaser.Scene {
 
     this.best = loadNumber('best');
     this.runs = loadNumber('runs');
-    this.foodTotal = loadNumber('foodTotal');
+    this.bestScore = loadNumber('bestScore');
+    this.scoreBank = loadNumber('scoreBank');
+    this.bestParade = loadNumber('bestParade');
 
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
     this.layout();
@@ -125,6 +140,7 @@ export class GameScene extends Phaser.Scene {
   private setState(state: State): void {
     // Paused and game over freeze the whole scene (world, water, sprite animation).
     this.duckView.setFrozen(state === 'paused' || state === 'gameover');
+    this.parade.setFrozen(state === 'paused' || state === 'gameover');
     this.state = state;
     this.stateTime = 0;
     this.ui.show(state === 'crashed' ? 'playing' : state);
@@ -134,14 +150,16 @@ export class GameScene extends Phaser.Scene {
   private clearRiver(): void {
     this.obstacles.clear();
     this.food.clear();
+    this.parade.clear();
+    this.popups.clear();
     this.spawner.reset(this.worldDistance);
     this.spawner.active = false;
   }
 
   private toMenu(): void {
     this.clearRiver();
-    this.ui.setMenuBest(this.best);
-    this.ui.setMenuBank(this.foodTotal);
+    this.ui.setMenuBest(this.bestScore);
+    this.ui.setMenuBank(this.scoreBank);
     this.ui.setHintVisible(this.runs === 0);
     this.speed = CONFIG.world.menuSpeed;
     this.setState('menu');
@@ -159,9 +177,13 @@ export class GameScene extends Phaser.Scene {
     this.spawner.active = true;
     this.runStart = this.worldDistance;
     this.speed = this.baseSpeed();
-    this.foodCount = 0;
+    this.score = 0;
+    this.maxParade = 0;
+    this.lastJumpCount = this.duck.jumpCount;
     this.controls.clear();
     this.ui.setDistance(0);
+    this.ui.setScore(0);
+    this.ui.setParade(0, 'reset');
     saveNumber('runs', ++this.runs);
     this.setState('playing');
     platform.gameplayStarted();
@@ -204,22 +226,32 @@ export class GameScene extends Phaser.Scene {
     this.shake.add(CONFIG.camera.shake.crash);
     this.audio.play('hit');
     this.splashes.burst(this.duck.x + 20, this.duck.y, 8, 180, 360, -2.4, -0.7, 3, 5);
+    this.parade.scatter();
+    this.ui.setParade(0, 'reset');
     this.spawner.active = false;
     this.setState('crashed');
   }
 
   private showGameOver(): void {
     const metres = this.runMetres();
-    const isNewBest = metres > this.best;
-    if (isNewBest) {
+    if (metres > this.best) {
       this.best = metres;
-      saveNumber('best', metres);
+      saveNumber('best', metres); // best distance is still kept as a secondary record
     }
-    this.foodTotal += this.foodCount;
-    saveNumber('foodTotal', this.foodTotal);
-    this.ui.setGameOver(metres, this.best, isNewBest, this.foodCount);
-    this.ui.setMenuBest(this.best);
-    this.ui.setMenuBank(this.foodTotal);
+    const isNewBest = this.score > this.bestScore;
+    if (isNewBest) {
+      this.bestScore = this.score;
+      saveNumber('bestScore', this.score);
+    }
+    if (this.maxParade > this.bestParade) {
+      this.bestParade = this.maxParade;
+      saveNumber('bestParade', this.maxParade);
+    }
+    this.scoreBank += this.score;
+    saveNumber('scoreBank', this.scoreBank);
+    this.ui.setGameOver(this.score, metres, this.bestScore, isNewBest, this.maxParade);
+    this.ui.setMenuBest(this.bestScore);
+    this.ui.setMenuBank(this.scoreBank);
     this.setState('gameover');
     platform.gameplayStopped();
   }
@@ -269,10 +301,13 @@ export class GameScene extends Phaser.Scene {
     // Sub-step so springs and collisions behave the same at 30, 60 or 144 Hz.
     const steps = Math.max(1, Math.ceil(dt / CONFIG.maxSubStep));
     const h = dt / steps;
+    this.frameDx = 0;
     for (let i = 0; i < steps; i++) this.step(h);
 
     this.duckEffects(dt);
     this.duckView.sync(this.duck, dt);
+    this.parade.sync(dt);
+    this.popups.update(dt, this.frameDx);
     // Events can be raised by input (dash) or physics (jump, landing); consume them once per frame.
     this.duck.clearEvents();
     this.water.draw(this.view);
@@ -299,14 +334,21 @@ export class GameScene extends Phaser.Scene {
 
     const dx = this.speed * h;
     this.worldDistance += dx;
+    this.frameDx += dx;
 
     this.water.update(h, dx);
     this.splashes.update(h, dx, this.water);
     this.background.update(dx, this.view);
     this.obstacles.update(h, dx, this.water, this.view);
     this.food.update(h, dx, this.water, this.view);
-    this.spawner.update(this.worldDistance, this.runMetres(), this.baseSpeed(), this.spawnEntry);
+    const wantDuckling = this.parade.total < CONFIG.ducklings.max;
+    this.spawner.update(this.worldDistance, this.runMetres(), this.baseSpeed(), wantDuckling, this.spawnEntry);
     this.duck.step(h, this.water);
+    if (this.duck.jumpCount !== this.lastJumpCount) {
+      this.lastJumpCount = this.duck.jumpCount;
+      this.parade.onMotherJump(this.worldDistance, this.duck.x);
+    }
+    this.parade.update(h, dx, this.worldDistance, this.duck, this.water, this.obstacles, this.view);
 
     if (this.state !== 'playing') return;
     const hit = this.obstacles.hitTest(this.duck.collider);
@@ -314,8 +356,7 @@ export class GameScene extends Phaser.Scene {
       if (CONFIG.obstacles.types[hit.type].breakable && this.duck.canSmash) this.smash(hit);
       else this.crash();
     }
-    const points = this.food.collect(this.duck.collider, this.onPickup);
-    this.foodCount += points;
+    this.food.collect(this.duck.collider, this.onPickup);
   }
 
   /** Places a pattern entry just beyond the right edge (minus how far it is overdue). */
@@ -323,6 +364,12 @@ export class GameScene extends Phaser.Scene {
     const x = this.view.right + CONFIG.obstacles.spawnMargin - overdue;
     if (entry.obstacle) {
       this.obstacles.spawn(entry.obstacle, x, this.water);
+    } else if (entry.duckling) {
+      this.parade.spawnLost(x, this.water);
+      if (!loadNumber('seenDuckling')) {
+        saveNumber('seenDuckling', 1);
+        this.ui.showToast('Swim into ducklings — they follow you and multiply your score!');
+      }
     } else if (entry.food) {
       const F = CONFIG.food;
       if (entry.on) {
@@ -340,18 +387,42 @@ export class GameScene extends Phaser.Scene {
   };
 
   private readonly onPickup = (x: number, y: number, kind: FoodKind): void => {
-    const bonus = kind === 'bigCorn';
+    const points = CONFIG.food.kinds[kind].points * this.parade.multiplier;
+    this.score += points;
+    this.ui.setScore(this.score);
+    const bonus = kind === 'seed';
+    this.popups.show(x, y, points, bonus || this.parade.count >= 3);
     const effect = CONFIG.food.pickup;
     this.splashes.sparkle(x, y, bonus ? effect.bonusSparkCount : effect.sparkCount, FOOD_SPARKLE[kind]);
     this.splashes.pickupRing(x, y, FOOD_SPARKLE[kind][1], bonus);
     this.audio.play(bonus ? 'bonus' : 'pickup');
   };
 
+  /** Parade feedback: sounds, sparkles, HUD, and offering the next duckling sooner after a loss. */
+  private readonly paradeEvents: ParadeEvents = {
+    joined: (x, y, count) => {
+      this.audio.play('peep');
+      this.splashes.sparkle(x, y - 10, 8, [0xffffff, 0xfff3b0, 0xffe45c]);
+      this.maxParade = Math.max(this.maxParade, count);
+      this.ui.setParade(count, 'join');
+    },
+    lost: (x, y, count) => {
+      this.audio.play('peepSad');
+      this.splashes.burst(x, y, 6, 140, 280, -2.4, -0.7, 2.5, 4);
+      this.ui.setParade(count, 'lost');
+      this.spawner.hurryDuckling(this.runMetres());
+    },
+    landed: (x, strength) => {
+      const surface = this.water.heightAt(x);
+      this.water.disturb(x, 60 * strength, 26);
+      this.splashes.burst(x, surface, Math.round(4 * strength), 110 * strength, 240 * strength, -2.5, -0.6, 2, 3.5);
+    },
+  };
+
   /** Dash through a crate: it bursts into wood pieces, and any food on its lid is collected. */
   private smash(o: Obstacle): void {
     const { x, y } = o;
-    const lidPoints = this.food.collectOnTop(x, o.box.halfW, this.onPickup);
-    this.foodCount += lidPoints;
+    this.food.collectOnTop(x, o.box.halfW, this.onPickup);
     this.obstacles.smash(o);
     this.splashes.chunks(x, y, 12, CRATE_CHUNKS);
     this.splashes.burst(x, this.water.heightAt(x), 6, 160, 320, -2.4, -0.7, 3, 5);
@@ -432,6 +503,7 @@ export class GameScene extends Phaser.Scene {
     const c = this.duck.collider;
     g.strokeCircle(c.x, c.y, c.r);
     this.obstacles.forEachActive((b) => g.strokeRect(b.x - b.halfW, b.y - b.halfH, b.halfW * 2, b.halfH * 2));
+    this.parade.forEachCollider((x, y, r) => g.strokeCircle(x, y, r));
     const pickup = c.r + CONFIG.food.pickupRadius;
     g.lineStyle(1, 0x22aa44, 0.8);
     this.food.forEachActive((x, y) => g.strokeCircle(x, y, pickup - c.r));

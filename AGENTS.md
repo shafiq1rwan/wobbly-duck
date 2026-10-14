@@ -46,7 +46,8 @@ src/platform/            Portal adapter — no-op locally; Poki SDK goes here in
 src/art/duckSprite.ts    Duck sheet layout: frame size, pivot, scale, animations
 src/game/                Duck (controller), DuckView (visuals + squash/stretch), Spring, Water (waves +
                          ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
-                         ObstacleManager (log/crate/rock), FoodManager, Patterns (handcrafted
+                         ObstacleManager (log/crate/rock), FoodManager, Parade (ducklings),
+                         ScorePopups, Patterns (handcrafted
                          patterns + Spawner, difficulty tiers), Background
 src/scenes/              BootScene (loading), GameScene (state machine + loop)
 src/ui/UI.ts + style.css DOM menus and HUD
@@ -94,6 +95,14 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
   `python tools/process-duck-strip.py <strip.png> <out_dir>`.
 - **Never put notes or docs in `public/`** — Vite copies the whole folder into the build.
 - After swapping art, check `?debug`: hitboxes must still match the visible body.
+
+## Art direction is the owner's call
+
+- Don't change the active look — background layers, water/sky colours, palette, duck, UI style —
+  unless the project owner asked for that change. Deliver new or alternative art as **unused**
+  assets (sources in `assets-src/`, a note in `docs/assets/`, a row in `docs/ASSET_LOG.md`) and let
+  the owner decide. The current scenery is clouds + distant rocks + palm islands over blue ocean.
+- Art-only tasks shouldn't edit game code; integration happens separately.
 
 ## Known gotchas
 

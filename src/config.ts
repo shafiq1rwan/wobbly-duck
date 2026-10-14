@@ -115,7 +115,7 @@ export const CONFIG = {
     hazeAlpha: 0.3,
     /**
      * Parallax scenery, back to front. Files are pre-cropped WebPs whose bottom row is the art's
-     * baseline (built from assets-src/parallax-no-outline-v2 by tools/optimize-images.py).
+     * baseline (built from assets-src/ by tools/optimize-images.py).
      * `height` is the drawn height in world units, `gap` the empty space between repeats, and the
      * bottom sits `sink` units below the water line. Keep scenery small and sparse so it never
      * competes with obstacles.
@@ -300,10 +300,11 @@ export const CONFIG = {
   food: {
     poolSize: 48,
     kinds: {
-      corn: { key: 'food-corn', file: 'food-corn-v2.webp', scale: 0.5, points: 1 },
-      peas: { key: 'food-peas', file: 'food-peas-v2.webp', scale: 0.5, points: 1 },
-      /** Rare bonus: a distinct bundle of three corn puffs. */
-      bigCorn: { key: 'food-bonus-corn', file: 'food-bonus-corn-v2.webp', scale: 0.78, points: 5 },
+      // Score per pickup, before the parade multiplier (× 1 + ducklings).
+      corn: { key: 'food-corn', file: 'food-corn-v2.webp', scale: 0.5, points: 50 },
+      peas: { key: 'food-peas', file: 'food-peas-v2.webp', scale: 0.5, points: 100 },
+      /** Rarest and most valuable. TODO: switch to the v2 seed (food-seed-v2.webp) when Codex delivers it. */
+      seed: { key: 'food-seed', file: 'food-seed.webp', scale: 0.55, points: 150 },
     },
     /** Added to the duck's collider radius. Generous: missing food should feel like a choice. */
     pickupRadius: 24,
@@ -328,6 +329,33 @@ export const CONFIG = {
       bonusRingEndRadius: 38,
       ringWidth: 2.5,
     },
+  },
+
+  /**
+   * Duckling Parade (docs/DUCKLING_PARADE.md): lost ducklings join a line behind the duck, copy its
+   * jumps along the same path plus `extraLag` per place in line, and multiply food score ×(1 + count).
+   */
+  ducklings: {
+    max: 6,
+    /** Size relative to the duck (sprite and physics). */
+    size: 0.55,
+    /** Placeholder colouring until the duckling art arrives. */
+    tint: 0xfff3b0,
+    spacing: 38,
+    /** Extra jump delay per place in line (s). 6 × 18 ms still leaves a ≥ 121 ms window for everyone. */
+    extraLag: 0.018,
+    /** How quickly followers slide into their slot (1/s). */
+    follow: 6,
+    /** Added to the duck's collider radius when picking up a lost duckling. */
+    pickupRadius: 12,
+    /** Spawning: first one at this distance, then every `every` metres while the parade isn't full. */
+    firstAtMetres: 150,
+    everyMin: 300,
+    everyMax: 500,
+    /** After losing one, the next lost duckling comes sooner. */
+    afterLossMetres: 150,
+    /** A knocked-off duckling tumbles away for this long. */
+    leaveTime: 1.6,
   },
 
   /** Endless pattern spawning (see src/game/Patterns.ts). Gaps are seconds of travel between patterns. */

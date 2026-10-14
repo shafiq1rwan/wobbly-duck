@@ -20,6 +20,14 @@ export interface Circle {
  * States are kept as flags rather than one enum, because they overlap (you can dash mid-air):
  *   swimming = !airborne, jumping = airborne, dashing = dashTime > 0, hurt = !alive
  */
+/** Size overrides — ducklings reuse the same controller, scaled down. */
+export interface DuckOptions {
+  floatOffset?: number;
+  colliderRadius?: number;
+  colliderOffsetX?: number;
+  colliderOffsetY?: number;
+}
+
 export class Duck {
   x: number;
   y = 0;
@@ -42,11 +50,24 @@ export class Duck {
   justLanded = false;
   justDashed = false;
   landingSpeed = 0;
+  /** Increments on every jump (lets followers react to jumps between frames). */
+  jumpCount = 0;
 
-  readonly collider: Circle = { x: 0, y: 0, r: D.colliderRadius };
+  readonly collider: Circle;
+  private readonly floatOffset: number;
+  private readonly colliderOffsetX: number;
+  private readonly colliderOffsetY: number;
 
-  constructor(readonly anchorX: number) {
+  /** `anchorX` is the duck's base x; the mother keeps it fixed, ducklings move it. */
+  constructor(
+    public anchorX: number,
+    options: DuckOptions = {},
+  ) {
     this.x = anchorX;
+    this.floatOffset = options.floatOffset ?? D.floatOffset;
+    this.colliderOffsetX = options.colliderOffsetX ?? D.colliderOffsetX;
+    this.colliderOffsetY = options.colliderOffsetY ?? D.colliderOffsetY;
+    this.collider = { x: 0, y: 0, r: options.colliderRadius ?? D.colliderRadius };
   }
 
   get dashing(): boolean {
@@ -67,7 +88,7 @@ export class Duck {
 
   reset(water: Water): void {
     this.x = this.anchorX;
-    this.y = water.heightAt(this.x) - D.floatOffset;
+    this.y = water.heightAt(this.x) - this.floatOffset;
     this.vy = 0;
     this.rotation = 0;
     this.airborne = false;
@@ -128,7 +149,7 @@ export class Duck {
 
     const b = D.buoyancy;
     const bob = b.bobAmplitude * Math.sin(this.time * b.bobFrequency * Math.PI * 2);
-    const floatY = water.heightAt(this.x) - D.floatOffset + bob;
+    const floatY = water.heightAt(this.x) - this.floatOffset + bob;
 
     if (this.jumpBuffer > 0 && this.canJump(floatY)) this.jump();
 
@@ -140,7 +161,7 @@ export class Duck {
       this.vy = Math.min(this.vy + g * h, j.maxFallSpeed);
       this.y += this.vy * h;
 
-      const ceiling = CONFIG.water.restY - D.floatOffset - j.maxHeight;
+      const ceiling = CONFIG.water.restY - this.floatOffset - j.maxHeight;
       if (this.y < ceiling) {
         this.y = ceiling;
         this.vy = Math.max(this.vy, 0);
@@ -174,6 +195,7 @@ export class Duck {
     this.airborne = true;
     this.jumpBuffer = 0;
     this.justJumped = true;
+    this.jumpCount++;
   }
 
   private land(): void {
@@ -202,7 +224,7 @@ export class Duck {
   }
 
   private updateCollider(): void {
-    this.collider.x = this.x + D.colliderOffsetX;
-    this.collider.y = this.y + D.colliderOffsetY;
+    this.collider.x = this.x + this.colliderOffsetX;
+    this.collider.y = this.y + this.colliderOffsetY;
   }
 }

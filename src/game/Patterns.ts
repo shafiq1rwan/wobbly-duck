@@ -22,6 +22,8 @@ export interface Entry {
   h?: number;
   /** Food resting on top of this obstacle type (spawned with it, at the same time). */
   on?: ObstacleType;
+  /** A lost duckling to rescue (Duckling Parade). */
+  duckling?: boolean;
 }
 
 interface Pattern {
@@ -115,22 +117,22 @@ const PATTERNS: Pattern[] = [
   pattern('crate-peas', 0, 1, ob(0, 'crate'), line(0.55, 3, 'peas')),
 
   // Tier 1 — variety and some two-obstacle patterns.
-  pattern('rock-arc-bonus', 1, 2, ob(0, 'rock'), arc(0, 5, 'corn', 'bigCorn')),
+  pattern('rock-arc-bonus', 1, 2, ob(0, 'rock'), arc(0, 5, 'corn', 'seed')),
   pattern('log-log', 1, 2, ob(0, 'log'), ob(1.4, 'log'), arc(1.4, 3, 'peas')),
   pattern('crate-log', 1, 2, ob(0, 'crate'), lid(0, 'corn', 'corn'), ob(1.6, 'log')),
-  pattern('crate-lid-bonus', 1, 1, ob(0, 'crate'), lid(0, 'bigCorn')),
-  pattern('rock-crown', 1, 1, ob(0, 'rock'), crown(0, 3, 'corn', 'bigCorn')),
+  pattern('crate-lid-bonus', 1, 1, ob(0, 'crate'), lid(0, 'seed')),
+  pattern('rock-crown', 1, 1, ob(0, 'rock'), crown(0, 3, 'corn', 'seed')),
   pattern('log-rock', 1, 2, ob(0, 'log'), ob(1.5, 'rock'), arc(1.5, 3, 'peas')),
   pattern('rock-crate', 1, 1, ob(0, 'rock'), ob(1.45, 'crate'), line(1.95, 3, 'corn')),
-  pattern('open-arc', 1, 1, line(0, 3, 'corn'), arc(0.9, 6, 'peas', 'bigCorn')),
+  pattern('open-arc', 1, 1, line(0, 3, 'corn'), arc(0.9, 6, 'peas', 'seed')),
 
   // Tier 2 — faster, longer combinations, more reward.
-  pattern('log-crate-rock', 2, 2, ob(0, 'log'), ob(1.4, 'crate'), ob(2.95, 'rock'), arc(2.95, 5, 'corn', 'bigCorn')),
+  pattern('log-crate-rock', 2, 2, ob(0, 'log'), ob(1.4, 'crate'), ob(2.95, 'rock'), arc(2.95, 5, 'corn', 'seed')),
   pattern('rock-rock', 2, 2, ob(0, 'rock'), arc(0, 3, 'corn'), ob(1.35, 'rock'), arc(1.35, 3, 'corn')),
   pattern('triple-log', 2, 1, ob(0, 'log'), ob(1.3, 'log'), ob(2.6, 'log'), arc(1.3, 5, 'peas')),
   // Two quick crates: dash through both (cooldown 0.7 s) — or jump them with good timing.
   pattern('crate-crate', 2, 1, ob(0, 'crate'), lid(0, 'corn'), ob(1.05, 'crate'), lid(1.05, 'corn'), line(1.55, 4, 'corn')),
-  pattern('big-corn-run', 2, 1, ob(0, 'log'), arc(0, 5, 'bigCorn'), ob(1.5, 'rock')),
+  pattern('seed-run', 2, 1, ob(0, 'log'), arc(0, 5, 'seed'), ob(1.5, 'rock')),
 ];
 
 // ------------------------------------------------------------------ spawner
@@ -145,26 +147,41 @@ export class Spawner {
   private queue: Scheduled[] = [];
   private nextPatternAt = 0;
   private last: Pattern | null = null;
+  /** Run distance (m) after which the next lost duckling may appear. */
+  private nextDucklingMetres = 0;
 
   reset(distance: number): void {
     this.queue.length = 0;
     this.nextPatternAt = distance + CONFIG.spawner.firstPatternDistance;
     this.last = null;
+    this.nextDucklingMetres = CONFIG.ducklings.firstAtMetres;
+  }
+
+  /** After a duckling is lost, offer the next one sooner. */
+  hurryDuckling(metres: number): void {
+    this.nextDucklingMetres = Math.min(this.nextDucklingMetres, metres + CONFIG.ducklings.afterLossMetres);
   }
 
   /**
    * Schedules the next pattern when due and hands out entries whose time has come.
    * `spawn` receives how far (world units) the entry is overdue so it can be placed exactly.
+   * `wantDuckling` is false while the parade is full.
    */
-  update(distance: number, metres: number, speed: number, spawn: (entry: Entry, overdue: number) => void): void {
-    if (this.active && distance >= this.nextPatternAt) this.schedule(metres, speed);
+  update(
+    distance: number,
+    metres: number,
+    speed: number,
+    wantDuckling: boolean,
+    spawn: (entry: Entry, overdue: number) => void,
+  ): void {
+    if (this.active && distance >= this.nextPatternAt) this.schedule(metres, speed, wantDuckling);
     while (this.queue.length && this.queue[0].at <= distance) {
       const s = this.queue.shift()!;
       spawn(s.entry, distance - s.at);
     }
   }
 
-  private schedule(metres: number, speed: number): void {
+  private schedule(metres: number, speed: number, wantDuckling: boolean): void {
     const tiers = CONFIG.spawner.tiers;
     let tier = 0;
     for (let i = 0; i < tiers.length; i++) if (metres >= tiers[i].fromMetres) tier = i;
@@ -186,6 +203,13 @@ export class Spawner {
     for (const entry of picked.entries) this.queue.push({ at: this.nextPatternAt + entry.t * speed, entry });
     this.queue.sort((a, b) => a.at - b.at);
     const gap = Phaser.Math.FloatBetween(tiers[tier].gapMin, tiers[tier].gapMax);
+    // Lost ducklings sit in the middle of the gap after a pattern: ≥ 0.6 s of open water either side.
+    if (wantDuckling && metres >= this.nextDucklingMetres) {
+      this.queue.push({ at: this.nextPatternAt + (picked.length + gap / 2) * speed, entry: { t: 0, duckling: true } });
+      this.queue.sort((a, b) => a.at - b.at);
+      const d = CONFIG.ducklings;
+      this.nextDucklingMetres = metres + Phaser.Math.FloatBetween(d.everyMin, d.everyMax);
+    }
     this.nextPatternAt += (picked.length + gap) * speed;
   }
 }

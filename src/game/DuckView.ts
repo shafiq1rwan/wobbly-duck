@@ -25,16 +25,24 @@ export class DuckView {
   private landTimer = 0;
   private hurtTime = -1;
   private shakeTime = 0;
+  private readonly baseTint: number;
 
-  constructor(scene: Phaser.Scene, depth: number) {
+  /** `size` scales the whole duck (ducklings); `tint` colours it (placeholder duckling art). */
+  constructor(scene: Phaser.Scene, depth: number, size = 1, tint = 0xffffff) {
     const s = DUCK_SHEET;
+    this.baseTint = tint;
     this.body = scene.add
-      .sprite(0, -J.anchorY, s.key, 0)
+      .sprite(0, -J.anchorY * size, s.key, 0)
       .setOrigin(s.pivotX / s.frameSize, s.pivotY / s.frameSize)
-      .setScale(s.scale);
-    this.squasher = scene.add.container(0, J.anchorY, [this.body]);
+      .setScale(s.scale * size)
+      .setTint(tint);
+    this.squasher = scene.add.container(0, J.anchorY * size, [this.body]);
     this.root = scene.add.container(0, 0, [this.squasher]).setDepth(depth);
     this.play('swim');
+  }
+
+  setVisible(visible: boolean): void {
+    this.root.setVisible(visible);
   }
 
   reset(): void {
@@ -43,7 +51,7 @@ export class DuckView {
     this.landTimer = 0;
     this.stretch.reset();
     this.tilt.reset();
-    this.body.clearTint();
+    this.body.setTint(this.baseTint);
     this.play('swim');
   }
 
@@ -117,7 +125,7 @@ export class DuckView {
     if (this.hurtTime >= 0) {
       this.hurtTime += dt;
       const on = this.hurtTime < 0.5 && Math.floor(this.hurtTime * 16) % 2 === 0;
-      this.body.setTint(on ? 0xff8f8f : 0xffffff);
+      this.body.setTint(on ? 0xff8f8f : this.baseTint);
     }
   }
 

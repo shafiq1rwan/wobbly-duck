@@ -22,6 +22,12 @@ const numberFormat = new Intl.NumberFormat('en-US');
 const ACTION_DELAY_MS = 110;
 const fmt = (n: number): string => numberFormat.format(n);
 
+function restartAnimation(el: HTMLElement, cls: string): void {
+  el.classList.remove('pop', 'shake', 'bump', 'show');
+  void el.offsetWidth; // reflow so the animation plays again
+  el.classList.add(cls);
+}
+
 /**
  * DOM overlay for menus and HUD — crisp text at any DPR, safe-area aware via CSS,
  * and works with mouse and touch. Game rendering stays in the canvas underneath.
@@ -35,7 +41,12 @@ export class UI {
     gameover: $('gameover'),
   };
   private readonly distanceEl = $('hud-distance');
+  private readonly scoreEl = $('hud-score');
+  private readonly paradeChip = $('chip-parade');
+  private readonly toastEl = $('toast');
   private lastDistance = -1;
+  private lastScore = -1;
+  private toastTimer = 0;
 
   constructor(handlers: UIHandlers) {
     const bind = (id: string, fn: () => void) => {
@@ -112,16 +123,49 @@ export class UI {
     this.distanceEl.textContent = fmt(metres);
   }
 
-  /** Corn collected across all runs (the currency for unlocking skins). */
+  /** All scores added up (the currency for unlocking skins). */
   setMenuBank(total: number): void {
     $('menu-bank').textContent = fmt(total);
   }
 
-  setGameOver(distance: number, best: number, isNewBest: boolean, food: number): void {
+  /** Run score at the top centre; bumps when it goes up. */
+  setScore(score: number): void {
+    if (score === this.lastScore) return;
+    const up = score > this.lastScore && this.lastScore >= 0;
+    this.lastScore = score;
+    this.scoreEl.textContent = fmt(score);
+    if (up) restartAnimation(this.scoreEl, 'bump');
+  }
+
+  /** Parade chip: ×(1 + ducklings). Pops on join, shakes on loss, hidden with an empty parade. */
+  setParade(count: number, event: 'join' | 'lost' | 'reset'): void {
+    $('hud-mult').textContent = String(1 + count);
+    const chip = this.paradeChip;
+    if (event === 'reset' || (count === 0 && event !== 'lost')) {
+      chip.hidden = true;
+      return;
+    }
+    chip.hidden = false;
+    restartAnimation(chip, event === 'join' ? 'pop' : 'shake');
+    // Keep the chip briefly after losing the last duckling so the shake is visible.
+    if (count === 0) setTimeout(() => (chip.hidden = $('hud-mult').textContent === '1'), 600);
+  }
+
+  /** A short message under the score (e.g. the first-duckling hint). */
+  showToast(message: string, seconds = 3.5): void {
+    this.toastEl.textContent = message;
+    this.toastEl.hidden = false;
+    restartAnimation(this.toastEl, 'show');
+    clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => (this.toastEl.hidden = true), seconds * 1000);
+  }
+
+  setGameOver(score: number, distance: number, best: number, isNewBest: boolean, parade: number): void {
+    $('go-score').textContent = fmt(score);
     $('go-distance').textContent = fmt(distance);
-    $('go-food').textContent = `+${fmt(food)}`;
+    $('go-parade').textContent = String(parade);
     $('go-best').textContent = fmt(best);
-    $('go-best-label').textContent = isNewBest ? 'New Best!' : 'Best Distance';
+    $('go-best-label').textContent = isNewBest ? 'New Best!' : 'Best Score';
     $('go-best-badge').classList.toggle('is-new', isNewBest);
   }
 }
