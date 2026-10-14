@@ -445,8 +445,27 @@ button {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(var(--safe-bottom) + 16px);
+  bottom: calc(var(--safe-bottom) + 36px); /* leaves room for the credit below */
   text-align: center;
+}
+
+/* Small, faint credit at the bottom centre; ignores pointer input so swipes pass through. */
+#credit {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + 8px);
+  z-index: 5;
+  text-align: center;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  opacity: 0.55;
+  text-shadow: 0 1px 2px rgba(19, 38, 106, 0.5);
+  pointer-events: none;
+  user-select: none;
 }
 
 .logo {
@@ -504,6 +523,12 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.chip-icon {
+  width: calc(var(--hud-h) * 0.72);
+  height: calc(var(--hud-h) * 0.72);
+  margin-left: -4px;
+}
+
 .chip.pop {
   animation: chip-pop 180ms ease-out;
 }
@@ -530,6 +555,17 @@ button {
   padding: 2px 0;
   font-size: var(--stat-label);
   font-weight: 500;
+}
+
+.stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-icon {
+  width: 1.3em;
+  height: 1.3em;
 }
 
 .stat-row strong {

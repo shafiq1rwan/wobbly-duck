@@ -22,8 +22,10 @@ export const CONFIG = {
   },
 
   world: {
-    /** Starting scroll speed. */
+    /** Starting scroll speed; ramps linearly to `maxSpeed` over `speedRampMetres` of a run. */
     baseSpeed: 360,
+    maxSpeed: 600,
+    speedRampMetres: 1600,
     /** Slow scroll used behind the main menu. */
     menuSpeed: 140,
     /** Speed decay after a crash (units/s²). */
@@ -109,6 +111,8 @@ export const CONFIG = {
     /** Vertical sky gradient from the top of the gameplay band down to the water line. */
     skyTop: 0x3ac3fd,
     skyHorizon: 0xbdebfd,
+    /** Light horizon-coloured haze over the scenery so obstacles always stand out against it. */
+    hazeAlpha: 0.3,
     /**
      * Parallax scenery, back to front. Files are pre-cropped WebPs whose bottom row is the art's
      * baseline (built from assets-src/parallax-no-outline-v2 by tools/optimize-images.py).
@@ -236,24 +240,81 @@ export const CONFIG = {
   },
 
   obstacles: {
-    /** Grace distance before the first obstacle of a run. */
-    firstSpawnDistance: 900,
-    /** Spacing between obstacles, expressed in seconds of travel at current speed. */
-    minGapTime: 1.35,
-    maxGapTime: 2.5,
-    spawnMargin: 120,
-    despawnMargin: 220,
-    poolSize: 12,
-    log: {
-      width: 124,
-      height: 36,
-      /** Collision box inset (forgiving). */
-      hitInsetX: 10,
-      hitInsetY: 6,
-      /** Log centre relative to the local water height. */
-      floatOffset: 2,
-      tiltFactor: 1.0,
+    spawnMargin: 140,
+    despawnMargin: 240,
+    poolSize: 16,
+    /** After a dash ends, crates still smash for this long (forgiving timing). */
+    smashGrace: 0.1,
+    /**
+     * Per type: pre-optimised WebP, display scale (world units per source px), origin = the point
+     * placed at `floatOffset` from the water surface, how much it follows the waves (0..1), tilt with
+     * the wave slope, and a forgiving hit box (half sizes) relative to that point.
+     */
+    types: {
+      log: {
+        key: 'obstacle-log',
+        file: 'obstacle-log-v2.webp',
+        scale: 0.42, // ≈127×26 units
+        originX: 0.5,
+        originY: 0.5,
+        floatOffset: 2,
+        waveFollow: 1,
+        tilt: 1,
+        hit: { halfW: 55, halfH: 9, offsetY: 0 },
+        breakable: false,
+      },
+      crate: {
+        key: 'obstacle-crate',
+        file: 'obstacle-box-v2.webp',
+        scale: 0.37, // ≈65×59 units, about a third under water
+        originX: 0.5,
+        originY: 0.5,
+        floatOffset: -9,
+        waveFollow: 1,
+        tilt: 0.6,
+        hit: { halfW: 27, halfH: 25, offsetY: 0 },
+        breakable: true,
+      },
+      rock: {
+        key: 'obstacle-rock',
+        file: 'obstacle-rock-v2.webp',
+        scale: 0.5, // ≈102 units wide, ≈49 above the water line
+        originX: 0.5,
+        originY: 136 / 192, // the art's waterline
+        floatOffset: 0,
+        waveFollow: 0.15,
+        tilt: 0,
+        hit: { halfW: 42, halfH: 22, offsetY: -22 },
+        breakable: false,
+      },
     },
+    /** Small ripples lapping around rocks. */
+    rockRippleInterval: 0.55,
+    rockRipple: 16,
+  },
+
+  /** Collectibles. Heights are measured as the duck's centre above its swimming position. */
+  food: {
+    poolSize: 48,
+    kinds: {
+      seed: { key: 'food-seed', file: 'food-seed.webp', scale: 0.5, points: 1 },
+      peas: { key: 'food-peas', file: 'food-peas.webp', scale: 0.5, points: 1 },
+      corn: { key: 'food-corn', file: 'food-corn.webp', scale: 0.62, points: 5 },
+    },
+    /** Added to the duck's collider radius. Generous: missing food should feel like a choice. */
+    pickupRadius: 24,
+    bobAmplitude: 4,
+    bobFrequency: 1.3,
+  },
+
+  /** Endless pattern spawning (see src/game/Patterns.ts). Gaps are seconds of travel between patterns. */
+  spawner: {
+    firstPatternDistance: 700,
+    tiers: [
+      { fromMetres: 0, gapMin: 1.5, gapMax: 2.4 },
+      { fromMetres: 200, gapMin: 1.3, gapMax: 2.0 },
+      { fromMetres: 800, gapMin: 1.2, gapMax: 1.7 },
+    ],
   },
 
   gameOverDelay: 0.75,
@@ -262,19 +323,4 @@ export const CONFIG = {
   maxSubStep: 1 / 120,
   /** Clamp for very long frames (tab switches, hitches). */
   maxFrameTime: 1 / 20,
-} as const;
-
-export const COLORS = {
-  sky: 0x8ed8ff,
-  duck: '#FFE078',
-  duckShade: '#F5C64F',
-  beak: '#FF994A',
-  outline: '#263B59',
-  cheek: '#FFB08A',
-  log: '#B9794B',
-  logDark: '#94593A',
-  logEnd: '#E2AE7E',
-  cloud: '#FFFFFF',
-  island: '#9ADBD0',
-  islandShade: '#86CFC6',
 } as const;

@@ -4,7 +4,7 @@ import type { Water } from './Water';
 
 const S = CONFIG.splash;
 
-type Kind = 'drop' | 'line';
+type Kind = 'drop' | 'line' | 'spark' | 'chunk';
 
 interface Particle {
   active: boolean;
@@ -20,9 +20,9 @@ interface Particle {
 }
 
 /**
- * Pooled water droplets and dash speed lines, drawn with one Graphics object.
- * Particles live in world space and drift left with the scrolling world; droplets that fall back
- * into the water leave a tiny ripple.
+ * Pooled particles drawn with one Graphics object: water droplets, dash speed lines, pickup sparkles
+ * and crate wood chunks. They live in world space and drift left with the scrolling world; droplets
+ * and chunks that fall back into the water leave a tiny ripple.
  */
 export class Splashes {
   private readonly pool: Particle[] = [];
@@ -59,6 +59,40 @@ export class Splashes {
     }
   }
 
+  /** Little sparkles bursting outwards (food pickup). */
+  sparkle(x: number, y: number, count: number, colors: readonly number[]): void {
+    for (let i = 0; i < count; i++) {
+      const p = this.take();
+      const a = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+      const v = Phaser.Math.FloatBetween(90, 200);
+      p.kind = 'spark';
+      p.x = x;
+      p.y = y;
+      p.vx = Math.cos(a) * v;
+      p.vy = Math.sin(a) * v;
+      p.maxLife = p.life = Phaser.Math.FloatBetween(0.3, 0.45);
+      p.size = Phaser.Math.FloatBetween(3, 5);
+      p.color = colors[i % colors.length];
+    }
+  }
+
+  /** Wood pieces flying out of a smashed crate. */
+  chunks(x: number, y: number, count: number, colors: readonly number[]): void {
+    for (let i = 0; i < count; i++) {
+      const p = this.take();
+      const a = Phaser.Math.FloatBetween(-2.9, -0.25);
+      const v = Phaser.Math.FloatBetween(180, 420);
+      p.kind = 'chunk';
+      p.x = x + Phaser.Math.FloatBetween(-18, 18);
+      p.y = y + Phaser.Math.FloatBetween(-18, 12);
+      p.vx = Math.cos(a) * v + 120; // thrown forward by the dash
+      p.vy = Math.sin(a) * v;
+      p.maxLife = p.life = Phaser.Math.FloatBetween(0.7, 1);
+      p.size = Phaser.Math.FloatBetween(6, 11);
+      p.color = colors[i % colors.length];
+    }
+  }
+
   /** A short white streak flying backwards (dash speed line). */
   speedLine(x: number, y: number): void {
     const p = this.take();
@@ -82,12 +116,16 @@ export class Splashes {
       }
       p.x += p.vx * dt - worldDx;
       p.y += p.vy * dt;
-      if (p.kind === 'drop') {
+      if (p.kind === 'drop' || p.kind === 'chunk') {
         p.vy += S.dropGravity * dt;
         if (p.vy > 0 && p.y > water.heightAt(p.x) + 2) {
-          water.disturb(p.x, 18 * p.size, 14);
+          water.disturb(p.x, (p.kind === 'chunk' ? 10 : 18) * p.size, 14);
           p.active = false;
         }
+      } else if (p.kind === 'spark') {
+        const drag = Math.max(0, 1 - 5 * dt);
+        p.vx *= drag;
+        p.vy *= drag;
       }
     }
   }
@@ -101,6 +139,17 @@ export class Splashes {
       if (p.kind === 'drop') {
         g.fillStyle(p.color, 0.95 * fade);
         g.fillCircle(p.x, p.y, p.size * (0.6 + 0.4 * fade));
+      } else if (p.kind === 'spark') {
+        // Four-point twinkle: two crossed bars.
+        const r = p.size * (0.5 + p.life / p.maxLife);
+        g.fillStyle(p.color, fade);
+        g.fillRect(p.x - r, p.y - r * 0.28, r * 2, r * 0.56);
+        g.fillRect(p.x - r * 0.28, p.y - r, r * 0.56, r * 2);
+      } else if (p.kind === 'chunk') {
+        g.fillStyle(0x6e4524, fade);
+        g.fillRoundedRect(p.x - p.size / 2 - 1.5, p.y - p.size * 0.3 - 1.5, p.size + 3, p.size * 0.6 + 3, 2.5);
+        g.fillStyle(p.color, fade);
+        g.fillRoundedRect(p.x - p.size / 2, p.y - p.size * 0.3, p.size, p.size * 0.6, 2);
       } else {
         g.fillStyle(p.color, 0.75 * (p.life / p.maxLife));
         g.fillRoundedRect(p.x, p.y - 2, p.size, 4, 2);

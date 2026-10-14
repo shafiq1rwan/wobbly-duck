@@ -5,6 +5,7 @@
  */
 import replay from '@phosphor-icons/core/fill/arrow-clockwise-fill.svg?raw';
 import crown from '@phosphor-icons/core/fill/crown-fill.svg?raw';
+import flag from '@phosphor-icons/core/fill/flag-fill.svg?raw';
 import home from '@phosphor-icons/core/fill/house-fill.svg?raw';
 import pause from '@phosphor-icons/core/fill/pause-fill.svg?raw';
 import play from '@phosphor-icons/core/fill/play-fill.svg?raw';
@@ -15,6 +16,7 @@ import star from '@phosphor-icons/core/fill/star-fill.svg?raw';
 const ICONS: Record<string, string> = {
   replay,
   crown,
+  flag,
   home,
   pause,
   play,

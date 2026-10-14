@@ -53,6 +53,13 @@ export class Duck {
     return this.dashTime > 0;
   }
 
+  /** True while dashing and briefly after — dashing smashes crates (forgiving timing). */
+  get canSmash(): boolean {
+    if (this.dashTime > 0) return true;
+    const sinceDash = D.dash.cooldown - this.dashCooldown;
+    return this.dashCooldown > 0 && sinceDash <= D.dash.duration + CONFIG.obstacles.smashGrace;
+  }
+
   /** 0 → just dashed, 1 → ready. */
   get dashReadiness(): number {
     return 1 - Math.max(0, this.dashCooldown) / D.dash.cooldown;

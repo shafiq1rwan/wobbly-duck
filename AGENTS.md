@@ -11,7 +11,7 @@ then the doc that matches your task:
 A 2D side-scrolling endless runner for desktop and mobile browsers, aimed at Poki. A chubby
 yellow duck floats on an endless river; the world scrolls right-to-left. The player jumps
 (Space / W / ↑, swipe up) and dashes (D / →, swipe right) to avoid logs, rocks and crates and
-to collect stars. Sessions are short and restarting is instant.
+to collect food (seeds, peas, corn). Sessions are short and restarting is instant.
 
 Design pillars — check every change against these:
 
@@ -43,10 +43,10 @@ src/config.ts            ALL gameplay tuning (speeds, jump, buoyancy, dash, wate
 src/core/                Viewport (DPR, resize, camera framing), InputManager, Storage, Audio (Web Audio sfx)
 src/platform/            Portal adapter — no-op locally; Poki SDK goes here in Phase 5
 src/art/duckSprite.ts    Duck sheet layout: frame size, pivot, scale, animations
-src/art/textures.ts      Procedural placeholder art (Canvas 2D) — currently the log
 src/game/                Duck (controller), DuckView (visuals + squash/stretch), Spring, Water (waves +
                          ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
-                         ObstacleManager, Background
+                         ObstacleManager (log/crate/rock), FoodManager, Patterns (handcrafted
+                         patterns + Spawner, difficulty tiers), Background
 src/scenes/              BootScene (loading), GameScene (state machine + loop)
 src/ui/UI.ts + style.css DOM menus and HUD
 assets-src/              High-res source art (versioned, NOT shipped)
@@ -73,6 +73,9 @@ docs/                    Specs and reference images (not shipped)
 - **UI is a DOM overlay**, not Phaser text. It respects safe areas via CSS `env()`.
 - **Platform code stays in `src/platform/`.** Don't call any portal SDK from gameplay code,
   and don't invent SDK method names — use the official Poki documentation when integrating.
+- **Patterns are timed in seconds of travel** (`src/game/Patterns.ts`), so fairness holds at any
+  speed. Obstacles that must be jumped stay ≥ 1.3 s apart; leave ≥ 1.5 s after a crate. Food arcs
+  use the simulated jump, so they always match the real trajectory.
 - **Pool, don't allocate**, in per-frame code (obstacles, particles, effects).
 - Keep it simple: no new frameworks, state libraries or abstractions without a clear need.
 
@@ -113,7 +116,7 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
 | --- | --- | --- |
 | 1 Prototype | canvas, water, buoyancy, jump, dash, log, collision, restart | done |
 | — Art pass | duck spritesheet, parallax scenery, UI restyle | done |
-| 2 Game feel | squash/stretch springs, ripples, splashes, synth sound effects, mute toggle | done — awaiting feel feedback |
-| 3 Endless | rock + crate, patterns, stars, difficulty, game-over stats | next |
+| 2 Game feel | squash/stretch springs, ripples, splashes, synth sound effects, mute toggle | done |
+| 3 Endless | log/crate/rock, dash-smash crates, handcrafted patterns, food collectibles, speed ramp + tiers, game-over food | done — awaiting feedback |
 | 4 Polish | final UI per UI_SPEC, music, mobile tuning, performance | — |
 | 5 Publishing | build/asset optimisation, Poki SDK, submission tests | — |

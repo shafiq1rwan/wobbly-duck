@@ -23,6 +23,7 @@ interface Layer {
  */
 export class Background {
   private readonly sky: Phaser.GameObjects.Image;
+  private readonly haze: Phaser.GameObjects.Rectangle;
   private readonly layers: Layer[] = [];
   private distance = 0;
 
@@ -56,6 +57,11 @@ export class Background {
         parallax: spec.parallax,
       });
     });
+    // Above the scenery, below obstacles and water.
+    this.haze = scene.add
+      .rectangle(0, 0, 1, 1, bg.skyHorizon, bg.hazeAlpha)
+      .setOrigin(0)
+      .setDepth(depth + 1 + bg.layers.length);
   }
 
   update(dx: number, view: ViewBounds): void {
@@ -63,6 +69,7 @@ export class Background {
     // The gradient spans the whole visible sky, so tall screens get the same horizon haze.
     const skyBottom = CONFIG.water.restY + 10;
     this.sky.setPosition(view.left, view.top).setDisplaySize(view.width, Math.max(1, skyBottom - view.top));
+    this.haze.setPosition(view.left, view.top).setSize(view.width, Math.max(1, skyBottom - view.top));
 
     for (const layer of this.layers) {
       const offset = this.distance * layer.parallax;

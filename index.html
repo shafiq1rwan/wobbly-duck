@@ -14,6 +14,12 @@
     <link rel="preload" as="image" href="./assets/bg-palms.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/bg-rocks.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/bg-clouds.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/obstacle-log-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/obstacle-box-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/obstacle-rock-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/food-seed.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/food-peas.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/food-corn.webp" type="image/webp" />
     <!-- Sky colour for the first paint, before CSS and the game canvas arrive. -->
     <style>html { background: #3ac3fd; }</style>
   </head>
@@ -26,8 +32,10 @@
       <!-- Gameplay HUD -->
       <div id="hud" class="screen" hidden>
         <div class="hud-chips">
+          <div id="chip-food" class="chip">
+            <img class="chip-icon" src="./assets/food-seed.webp" alt="" /><span id="hud-food">0</span>
+          </div>
           <div class="chip"><span id="hud-distance">0</span>&nbsp;m</div>
-          <!-- Star chip arrives with collectibles (Phase 3) -->
         </div>
         <button id="btn-pause" class="icon-btn icon-btn-square" aria-label="Pause">
           <svg class="icon"><use href="#i-pause" /></svg>
@@ -87,10 +95,13 @@
           <h2 class="title">Game Over</h2>
           <div class="stats-card">
             <div class="stat-row">
-              <span>Distance</span>
+              <span class="stat-label"><svg class="icon stat-icon"><use href="#i-flag" /></svg>Distance</span>
               <strong><span id="go-distance">0</span> m</strong>
             </div>
-            <!-- Stars row arrives with collectibles (Phase 3) -->
+            <div class="stat-row">
+              <span class="stat-label"><img class="stat-icon" src="./assets/food-seed.webp" alt="" />Food</span>
+              <strong id="go-food">0</strong>
+            </div>
           </div>
           <div id="go-best-badge" class="best-badge">
             <svg class="crown"><use href="#i-crown" /></svg>
@@ -110,6 +121,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Credit: always visible, never blocks input. -->
+    <div id="credit" aria-hidden="true">By Saiss</div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
