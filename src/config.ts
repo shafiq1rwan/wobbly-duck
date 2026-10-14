@@ -306,6 +306,26 @@ export const CONFIG = {
         hit: { halfW: 47, halfH: 47, offsetY: 0 }, // top ≈65 above water, as before
         breakable: true,
       },
+      /**
+       * Two crates stacked: too tall for a single jump, cleared by a double jump or smashed by a dash.
+       * The texture is built at runtime from the crate (`stack`). It floats higher than a single
+       * crate and bobs less, so a single jump can't clear it even from a wave crest (checked with the
+       * real jump physics and in-game bots), while a double jump clears it with ~0.5 s to spare.
+       */
+      crateStack: {
+        key: 'obstacle-crate-stack',
+        file: 'obstacle-box-v3.webp',
+        stack: { of: 'crate', count: 2 },
+        scale: 0.722,
+        originX: 0.5,
+        originY: 0.5, // replaced by the built texture's bottom-crate centre
+        floatOffset: -44, // bottom crate's centre, 44 above the water (it sits on the surface)
+        top: 200,
+        waveFollow: 0.4,
+        tilt: 0.25,
+        hit: { halfW: 47, halfH: 100, offsetY: -53 }, // top ≈197 above water
+        breakable: true,
+      },
       rock: {
         key: 'obstacle-rock',
         file: 'obstacle-rock-v2.webp',
@@ -468,6 +488,12 @@ export const CONFIG = {
     afterCrateGap: 1.55,
     /** After a lily pad the duck is in the air for ~1.1 s and lands far ahead: keep that water clear. */
     afterPadGap: 1.7,
+    /**
+     * Crate stacks: the double jump takes off 0.45–1 s before one and lands up to ~0.9 s after it,
+     * so leave room on both sides.
+     */
+    beforeStackGap: 1.6,
+    afterStackGap: 1.7,
     /** Corn trail filling open water (Cookie Run style), kept clear of obstacles and ducklings. */
     trail: { step: 0.13, clearance: 0.3, peasChance: 0.08 },
   },

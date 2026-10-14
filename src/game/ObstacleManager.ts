@@ -35,7 +35,13 @@ export class Obstacle {
 export class ObstacleManager {
   private readonly pool: Obstacle[] = [];
 
+  /** Vertical origin of each type's texture (stacks: the bottom crate's centre). */
+  private readonly originY = new Map<ObstacleType, number>();
+
   constructor(scene: Phaser.Scene, depth: number) {
+    for (const [type, t] of Object.entries(O.types) as [ObstacleType, (typeof O.types)[ObstacleType]][]) {
+      this.originY.set(type, 'stack' in t ? buildStack(scene, t.key, O.types[t.stack.of].key, t.stack.count) : t.originY);
+    }
     for (let i = 0; i < O.poolSize; i++) {
       const sprite = scene.add.image(0, 0, O.types.log.key).setDepth(depth).setVisible(false);
       this.pool.push(new Obstacle(sprite));
@@ -54,7 +60,7 @@ export class ObstacleManager {
     o.type = type;
     o.x = x;
     o.rippleTimer = Math.random() * O.rockRippleInterval;
-    o.sprite.setTexture(t.key).setOrigin(t.originX, t.originY).setScale(t.scale).setVisible(true);
+    o.sprite.setTexture(t.key).setOrigin(t.originX, this.originY.get(type)!).setScale(t.scale).setVisible(true);
     o.box.halfW = t.hit.halfW;
     o.box.halfH = t.hit.halfH;
     this.place(o, water);
@@ -129,4 +135,28 @@ function circleIntersectsBox(c: Circle, b: Box): boolean {
   const dx = c.x - nx;
   const dy = c.y - ny;
   return dx * dx + dy * dy < c.r * c.r;
+}
+
+/**
+ * Builds a texture of `count` copies of `baseKey` stacked on top of each other (each one a few pixels
+ * off-centre, like a hand-made pile). Returns the vertical origin that puts the bottom one's centre
+ * at the sprite's position, so a stack floats exactly like a single one.
+ */
+function buildStack(scene: Phaser.Scene, key: string, baseKey: string, count: number): number {
+  const img = scene.textures.get(baseKey).getSourceImage() as HTMLImageElement;
+  const w = img.width;
+  const h = img.height;
+  const pad = 8; // transparent margin around the crate face in the art
+  const step = h - pad * 2; // each crate sits right on the face below it
+  const shift = 4;
+  const height = h + step * (count - 1);
+  if (!scene.textures.exists(key)) {
+    const tex = scene.textures.createCanvas(key, w + shift, height)!;
+    for (let i = 0; i < count; i++) {
+      // Bottom first; every other crate nudged right.
+      tex.context.drawImage(img, i % 2 === 1 ? shift : 0, height - h - i * step);
+    }
+    tex.refresh();
+  }
+  return (height - h / 2) / height;
 }

@@ -678,6 +678,7 @@ export class GameScene extends Phaser.Scene {
     const x = this.view.right + CONFIG.obstacles.spawnMargin - overdue;
     if (entry.obstacle) {
       this.obstacles.spawn(entry.obstacle, x, this.water);
+      if (entry.obstacle === 'crateStack') this.hintOnce('seenStack', 'Too tall to jump! Double jump over it, or dash to smash it!');
     } else if (entry.pad) {
       this.pads.spawn(x, this.water);
       this.hintOnce('seenLilyPad', 'Swim onto lily pads to bounce high!');
@@ -787,7 +788,10 @@ export class GameScene extends Phaser.Scene {
     const { x, y } = o;
     this.food.collectOnTop(x, o.box.halfW, this.onPickup);
     this.obstacles.smash(o);
-    this.splashes.chunks(x, y, 12, CRATE_CHUNKS);
+    const t = CONFIG.obstacles.types[o.type];
+    const count = 'stack' in t ? t.stack.count : 1;
+    const each = (t.hit.halfH * 2) / count; // one crate's height
+    for (let i = 0; i < count; i++) this.splashes.chunks(x, y - i * each, 12, CRATE_CHUNKS);
     this.splashes.burst(x, this.water.heightAt(x), 6, 160, 320, -2.4, -0.7, 3, 5);
     this.water.disturb(x, 140, 50);
     this.shake.add(CONFIG.camera.shake.crate);

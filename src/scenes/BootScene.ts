@@ -15,7 +15,9 @@ export class BootScene extends Phaser.Scene {
     const worn = new Skins().equipped;
     if (worn !== 'classic') loadDuckSheet(this, worn);
     const base = `${import.meta.env.BASE_URL}assets/`;
-    const images = [...CONFIG.background.layers, ...Object.values(CONFIG.obstacles.types), ...Object.values(CONFIG.food.kinds)];
+    // Stacked obstacles (crate stack) are built from their base texture at runtime, not loaded.
+    const obstacles = Object.values(CONFIG.obstacles.types).filter((t) => !('stack' in t));
+    const images = [...CONFIG.background.layers, ...obstacles, ...Object.values(CONFIG.food.kinds)];
     const pads = CONFIG.lilyPads;
     this.load.spritesheet(pads.key, base + pads.file, { frameWidth: pads.frameWidth, frameHeight: pads.frameHeight });
     const frog = CONFIG.frog;

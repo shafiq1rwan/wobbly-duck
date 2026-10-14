@@ -12,6 +12,8 @@ import type { ObstacleType } from './ObstacleManager';
  * reaction time — stays the same as the world speeds up. Fairness rules for new patterns:
  *   - obstacles that must be jumped are ≥ 1.3 s apart (jump air time ≈ 0.8 s + reaction);
  *   - after a crate (which may be dashed through, skipping ahead) leave ≥ 1.5 s;
+ *   - crate stacks need a double jump (take-off 0.45–1 s early, landing up to ~0.9 s after): ≥ 1.6 s
+ *     before one and ≥ 1.7 s after (spawner.beforeStackGap / afterStackGap);
  *   - food is always optional and never placed inside an obstacle;
  *   - food can only rest on crates (`lid`): smashing the crate collects it. Logs and rocks are too low
  *     for a jump to reach food resting on them, so use `crown` (food right above, at jump height).
@@ -101,8 +103,17 @@ function line(t0: number, n: number, kind: FoodRole, step = 0.12): Entry[] {
 
 /** Food resting on top of the crate at time `t` (collected by smashing it). */
 function lid(t: number, ...kinds: FoodRole[]): Entry[] {
+  return lidOn('crate', t, kinds);
+}
+
+/** Food on top of a crate stack: picked up by a double jump over it, or by smashing it. */
+function stackLid(t: number, ...kinds: FoodRole[]): Entry[] {
+  return lidOn('crateStack', t, kinds);
+}
+
+function lidOn(on: ObstacleType, t: number, kinds: FoodRole[]): Entry[] {
   const step = kinds.length > 2 ? 0.075 : 0.09;
-  return kinds.map((kind, i) => ({ t: t + (i - (kinds.length - 1) / 2) * step, food: kind, on: 'crate' as const }));
+  return kinds.map((kind, i) => ({ t: t + (i - (kinds.length - 1) / 2) * step, food: kind, on }));
 }
 
 /** A tight cluster right above the obstacle at time `tCenter`, where a well-timed jump passes. */
@@ -181,6 +192,11 @@ const PATTERNS: Pattern[] = [
   pattern('rock-crate', 1, 1, ob(0, 'rock'), ob(1.45, 'crate'), line(1.95, 3, 'common')),
   pattern('log-sky', 1, 2, ob(0, 'log'), skyArc(-0.4, 5, 'rare')),
   pattern('lily-log', 1, 2, pad(0), bounceArc(0, 5, 'mid'), ob(1.9, 'log')),
+  // Crate stacks (from 200 m): double jump over, or dash to smash. Sky food follows a double jump
+  // taken 0.7 s before the stack — the middle of the take-off window.
+  pattern('stack', 1, 2, ob(0, 'crateStack')),
+  pattern('stack-lid', 1, 1, ob(0, 'crateStack'), stackLid(0, 'rare')),
+  pattern('stack-sky', 1, 1, ob(0, 'crateStack'), skyArc(-0.7, 5, 'mid')),
   pattern('open-arc', 1, 1, line(0, 3, 'common'), arc(0.9, 6, 'mid', 'rare')),
 
   // Tier 2 — faster, longer combinations, more reward.
@@ -190,6 +206,7 @@ const PATTERNS: Pattern[] = [
   // Two quick crates: dash through both (cooldown 0.7 s) — or jump them with good timing.
   pattern('lily-chain', 2, 1, pad(0), bounceArc(0, 5, 'rare'), pad(1.85), bounceArc(1.85, 5, 'rare')),
   pattern('crate-crate', 2, 1, ob(0, 'crate'), lid(0, 'common'), ob(1.05, 'crate'), lid(1.05, 'common'), line(1.55, 4, 'common')),
+  pattern('log-stack', 2, 1, ob(0, 'log'), arc(0, 3, 'common'), ob(1.7, 'crateStack'), stackLid(1.7, 'mid')),
   pattern('seed-run', 2, 1, ob(0, 'log'), arc(0, 5, 'rare'), ob(1.5, 'rock')),
 ];
 
@@ -284,7 +301,9 @@ export class Spawner {
     const obstacles = picked.entries.filter((e) => e.obstacle || e.pad);
     let start = this.nextPatternAt;
     if (obstacles.length) {
-      const gap = this.lastObstacleType === 'crate' ? cfg.afterCrateGap : this.lastObstacleType === 'pad' ? cfg.afterPadGap : cfg.minObstacleGap;
+      const after: Partial<Record<string, number>> = { crate: cfg.afterCrateGap, pad: cfg.afterPadGap, crateStack: cfg.afterStackGap };
+      let gap = after[this.lastObstacleType ?? ''] ?? cfg.minObstacleGap;
+      if (obstacles[0].obstacle === 'crateStack') gap = Math.max(gap, cfg.beforeStackGap);
       const need = gap * speed;
       start = Math.max(start, this.lastObstacleAt + need - obstacles[0].t * speed);
     }
