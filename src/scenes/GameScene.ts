@@ -86,6 +86,8 @@ export class GameScene extends Phaser.Scene {
   private readonly learned = { jump: loadNumber('learnedJump') === 1, dash: loadNumber('learnedDash') === 1 };
   /** The run has started changing into the lake biome. */
   private lakeStarted = false;
+  /** A run has been started since the page loaded (the first one skips the commercial break). */
+  private playedThisVisit = false;
   private dashMeter!: DashMeter;
   private readonly shake = new CameraShake();
   private audio!: AudioManager;
@@ -229,8 +231,18 @@ export class GameScene extends Phaser.Scene {
     this.analytics.menuShown();
   }
 
-  /** Every way into a run passes a commercial break first (the portal decides whether an ad shows). */
+  /**
+   * The visit's first run starts straight away, so the player's first input fires gameplayStart
+   * (Poki rule). Later runs ("keep playing") pass a commercial break first; the portal decides
+   * whether an ad actually shows.
+   */
   private startRun(): void {
+    if (!this.playedThisVisit) {
+      this.playedThisVisit = true;
+      this.controls.clear();
+      this.beginRun();
+      return;
+    }
     this.afterBreak(() => this.beginRun());
   }
 

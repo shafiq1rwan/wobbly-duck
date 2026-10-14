@@ -24,24 +24,39 @@ declare global {
   }
 }
 
+/** Longest we wait for `PokiSDK.init()` before using the SDK anyway (it can take seconds). */
+const INIT_WAIT_MS = 10000;
+
 /**
  * Poki adapter. If the SDK is missing (ad blocker, offline) the game still plays: calls become no-ops,
  * commercial breaks resolve at once and rewarded breaks give no reward (Poki's rule).
+ *
+ * `PokiSDK.init()` can take several seconds, so the game doesn't wait for it: it boots and loads in
+ * parallel, and every SDK call is queued behind init so the order Poki sees is always
+ * init → gameLoadingFinished → commercialBreak → gameplayStart.
  */
 export class PokiPlatform implements Platform {
   /** Mirrors gameplayStart/Stop so neither is ever sent twice in a row (Poki requirement). */
   private playing = false;
+  /** Resolves once the SDK is initialised (or failed, or took too long). */
+  private ready: Promise<void> = Promise.resolve();
 
   private get sdk(): PokiSDKApi | undefined {
     return window.PokiSDK;
   }
 
+  /** Starts the SDK and returns at once, so the game loads in parallel (see the class comment). */
   async init(): Promise<void> {
+    const sdk = this.sdk;
+    if (!sdk) return;
+    let started: Promise<void>;
     try {
-      await this.sdk?.init();
+      started = sdk.init();
     } catch {
-      // Poki: "load your game anyway" (e.g. an ad blocker is active).
+      return; // Poki: "load your game anyway"
     }
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, INIT_WAIT_MS));
+    this.ready = Promise.race([started.catch(() => undefined), timeout]);
   }
 
   loadingFinished(): void {
@@ -63,6 +78,7 @@ export class PokiPlatform implements Platform {
   async commercialBreak(onStart: () => void): Promise<void> {
     const sdk = this.sdk;
     if (!sdk) return;
+    await this.ready;
     try {
       await sdk.commercialBreak(onStart);
     } catch {
@@ -73,6 +89,7 @@ export class PokiPlatform implements Platform {
   async rewardedBreak(onStart: () => void): Promise<boolean> {
     const sdk = this.sdk;
     if (!sdk) return false;
+    await this.ready;
     try {
       return Boolean(await sdk.rewardedBreak(onStart));
     } catch {
@@ -84,13 +101,16 @@ export class PokiPlatform implements Platform {
     this.call((s) => s.measure(category, what, action));
   }
 
+  /** Runs an SDK call once init is done; calls keep their order because they share one promise. */
   private call(fn: (sdk: PokiSDKApi) => void): void {
     const sdk = this.sdk;
     if (!sdk) return;
-    try {
-      fn(sdk);
-    } catch {
-      /* never let the portal break the game */
-    }
+    void this.ready.then(() => {
+      try {
+        fn(sdk);
+      } catch {
+        /* never let the portal break the game */
+      }
+    });
   }
 }

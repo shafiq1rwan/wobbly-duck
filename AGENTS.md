@@ -98,7 +98,8 @@ docs/                    Specs and reference images (not shipped)
   (`lid` / `stackLid`, collected by smashing or flying over); above logs/rocks use `crown` at jump
   height. A new obstacle's height and spacing should be checked against the jump physics and with
   an in-game bot (single vs double jump vs dash), including wave bobbing.
-- **Ads and analytics go through `platform`**: `commercialBreak` before every run and resume,
+- **Ads and analytics go through `platform`**: the visit's first run starts at once with
+  `gameplayStart` (the player's first input); `commercialBreak` comes before every later run and resume,
   `rewardedBreak` for the revive (audio muted in the `onStart` callback, input ignored while
   `adPlaying`), `gameplayStarted`/`Stopped` never twice in a row, and Game Events only via
   `src/game/Analytics.ts`.

@@ -79,7 +79,9 @@ root. The dev build uses a local stand-in instead (fake ads, events logged in de
 - **New release:** commit, then `npm version patch` (or `minor`), then `npm run build:poki`, then
   upload the zip.
 - **The Poki build** adds the SDK script and leaves out the debug tools and the in-game credit.
-  It shows a commercial break before each run and resume, uses rewarded breaks for the revive,
+  The first run starts straight away with `gameplayStart`; later runs and resumes get a commercial
+  break first. The SDK starts in parallel with the game (it can take seconds), and SDK calls queue
+  behind it in order. It uses rewarded breaks for the revive,
   and sends [Game Events](docs/ANALYTICS.md). If the SDK is blocked (ad blocker) the game still
   plays, without revives.
 
