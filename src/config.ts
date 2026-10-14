@@ -110,16 +110,16 @@ export const CONFIG = {
     skyTop: 0x3ac3fd,
     skyHorizon: 0xbdebfd,
     /**
-     * Parallax scenery, back to front (public/assets/parallax-no-outline-v2: 1536×1024 PNGs with
-     * transparent left/right edges). `cropTop`/`cropBottom` are the opaque rows of the source;
+     * Parallax scenery, back to front. Files are pre-cropped WebPs whose bottom row is the art's
+     * baseline (built from assets-src/parallax-no-outline-v2 by tools/optimize-images.py).
      * `height` is the drawn height in world units, `gap` the empty space between repeats, and the
      * bottom sits `sink` units below the water line. Keep scenery small and sparse so it never
      * competes with obstacles.
      */
     layers: [
-      { key: 'bg-clouds', file: 'parallax-no-outline-v2/clouds.png', cropTop: 489, cropBottom: 748, height: 150, gap: 160, sink: 8, parallax: 0.025 },
-      { key: 'bg-rocks', file: 'parallax-no-outline-v2/distant-rocks.png', cropTop: 431, cropBottom: 658, height: 115, gap: 260, sink: 8, parallax: 0.06 },
-      { key: 'bg-palms', file: 'parallax-no-outline-v2/palm-islands.png', cropTop: 307, cropBottom: 752, height: 195, gap: 420, sink: 8, parallax: 0.12 },
+      { key: 'bg-clouds', file: 'bg-clouds.webp', height: 150, gap: 160, sink: 8, parallax: 0.025 },
+      { key: 'bg-rocks', file: 'bg-rocks.webp', height: 115, gap: 260, sink: 8, parallax: 0.06 },
+      { key: 'bg-palms', file: 'bg-palms.webp', height: 195, gap: 420, sink: 8, parallax: 0.12 },
     ],
   },
 

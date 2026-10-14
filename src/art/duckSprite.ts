@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 
 /**
- * Layout of public/assets/duck-sheet.png (built by tools/process-duck-strip.py):
+ * Layout of public/assets/duck-sheet.webp (source assets-src/duck-sheet.png, built by
+ * tools/process-duck-strip.py, optimised by tools/optimize-images.py):
  * 256×256 cells in one row, every frame aligned on the eye so the head stays steady.
  *
  *   0 wing folded, foot forward   1 wing folded, feet back    2 wing raised
@@ -9,7 +10,7 @@ import Phaser from 'phaser';
  */
 export const DUCK_SHEET = {
   key: 'duck',
-  url: 'assets/duck-sheet.png',
+  url: 'assets/duck-sheet.webp',
   frameSize: 256,
   frameCount: 6,
   /** World units per sheet pixel (≈112 units wide on screen). */

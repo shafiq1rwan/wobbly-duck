@@ -26,6 +26,27 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --font: 'Fredoka', 'Trebuchet MS', 'Arial Rounded MT Bold', system-ui, sans-serif;
+
+  /*
+   * Fluid UI sizes: everything scales with the screen's smaller side (vmin), so the HUD and the
+   * pause/game-over cards stay proportionate on any phone, in both orientations. Desktop and
+   * tablets hit the upper bounds (the original design sizes).
+   */
+  --hud-h: clamp(36px, 9vmin, 44px);
+  --hud-font: clamp(20px, 5.2vmin, 26px);
+  --modal-w: clamp(250px, 78vmin, 400px);
+  --modal-pad: clamp(14px, 4vmin, 28px);
+  --modal-gap: clamp(8px, 2.4vmin, 16px);
+  --title: clamp(30px, 8.6vmin, 56px);
+  --btn-h: clamp(40px, 10.5vmin, 60px);
+  --btn-font: clamp(17px, 4.4vmin, 26px);
+  --btn-icon: clamp(20px, 5.4vmin, 28px);
+  --btn-depth: clamp(4px, 1.1vmin, 6px);
+  --stat-label: clamp(15px, 4.2vmin, 22px);
+  --stat-value: clamp(18px, 5.2vmin, 28px);
+  --best-label: clamp(12px, 3.2vmin, 16px);
+  --best-value: clamp(20px, 5.6vmin, 30px);
+  --crown: clamp(26px, 7.4vmin, 40px);
 }
 
 * {
@@ -111,14 +132,14 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 16px;
-  width: min(400px, 100%);
+  gap: var(--modal-gap);
+  width: min(var(--modal-w), 100%);
   max-height: 100%;
-  padding: 26px 26px 30px;
+  padding: var(--modal-pad) var(--modal-pad) calc(var(--modal-pad) + 4px);
   text-align: center;
   background: linear-gradient(rgba(46, 96, 156, 0.74), rgba(30, 66, 120, 0.8));
   border: 3px solid rgba(255, 255, 255, 0.35);
-  border-radius: 26px;
+  border-radius: clamp(18px, 5vmin, 26px);
   box-shadow:
     0 8px 0 rgba(19, 38, 106, 0.45),
     0 18px 40px rgba(10, 30, 70, 0.3);
@@ -135,7 +156,7 @@ body {
 
 .title {
   margin: 0;
-  font-size: 56px;
+  font-size: var(--title);
   font-weight: 700;
   line-height: 1;
   color: var(--white);
@@ -183,30 +204,66 @@ button {
   padding: 0;
   color: inherit;
   transition:
-    transform 0.08s ease,
+    transform 0.12s ease,
     box-shadow 0.08s ease;
+}
+
+/* Squishy buttons: squash while held, then a jelly wobble on release (classes set in UI.ts). */
+.btn.pressed,
+.icon-btn.pressed {
+  transform: scale(1.12, 0.84);
+  transition-duration: 0.06s;
+}
+
+.btn.pressed {
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+.jelly {
+  animation: jelly 0.5s ease-out;
+}
+
+@keyframes jelly {
+  0% {
+    transform: scale(1.12, 0.84);
+  }
+  25% {
+    transform: scale(0.9, 1.12);
+  }
+  45% {
+    transform: scale(1.06, 0.94);
+  }
+  65% {
+    transform: scale(0.97, 1.03);
+  }
+  82% {
+    transform: scale(1.01, 0.99);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  height: 60px;
-  min-width: 60px;
-  padding: 0 26px;
+  gap: clamp(6px, 2vmin, 10px);
+  height: var(--btn-h);
+  min-width: var(--btn-h);
+  padding: 0 clamp(14px, 4vmin, 26px);
   white-space: nowrap;
-  border: 4px solid var(--ink);
-  box-shadow: 0 6px 0 var(--ink);
-  font-size: 26px;
+  border: clamp(3px, 0.7vmin, 4px) solid var(--ink);
+  box-shadow: 0 var(--btn-depth) 0 var(--ink);
+  font-size: var(--btn-font);
   font-weight: 700;
   line-height: 1;
   color: var(--ink);
 }
 
 .btn .icon {
-  width: 28px;
-  height: 28px;
+  width: var(--btn-icon);
+  height: var(--btn-icon);
 }
 
 .btn span {
@@ -214,15 +271,10 @@ button {
 }
 
 @media (hover: hover) {
-  .btn:hover {
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 0 var(--ink);
+  .btn:hover:not(.pressed):not(.jelly),
+  .icon-btn:hover:not(.pressed):not(.jelly) {
+    transform: scale(1.05);
   }
-}
-
-.btn:active {
-  transform: translateY(5px);
-  box-shadow: 0 1px 0 var(--ink);
 }
 
 .btn-primary {
@@ -247,20 +299,20 @@ button {
 }
 
 .btn-secondary {
-  width: 60px;
+  width: var(--btn-h);
   padding: 0;
   background: linear-gradient(#b3c9e2, #93afcf);
-  border-radius: 18px;
+  border-radius: clamp(12px, 3.4vmin, 18px);
 }
 
 .btn-secondary .icon {
-  width: 34px;
-  height: 34px;
+  width: calc(var(--btn-icon) * 1.2);
+  height: calc(var(--btn-icon) * 1.2);
 }
 
 .btn-row {
   display: flex;
-  gap: 12px;
+  gap: clamp(8px, 2.4vmin, 12px);
   align-items: center;
   margin-top: 4px;
 }
@@ -281,9 +333,17 @@ button {
   border-radius: 12px;
 }
 
-.icon-btn:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 rgba(19, 38, 106, 0.55);
+/* In-game pause button: same height and corner radius as the distance chip next to it. */
+#btn-pause {
+  width: var(--hud-h);
+  height: var(--hud-h);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+#btn-pause .icon {
+  width: calc(var(--hud-h) * 0.5);
+  height: calc(var(--hud-h) * 0.5);
 }
 
 .icon-btn .icon {
@@ -315,8 +375,8 @@ button {
 }
 
 .crown {
-  width: 40px;
-  height: 40px;
+  width: var(--crown);
+  height: var(--crown);
   color: var(--yellow);
   /* Navy outline + drop shadow around a single-colour icon. */
   filter: drop-shadow(2px 0 0 var(--ink)) drop-shadow(-2px 0 0 var(--ink)) drop-shadow(0 2px 0 var(--ink))
@@ -332,13 +392,13 @@ button {
 }
 
 .best-label {
-  font-size: 16px;
+  font-size: var(--best-label);
   font-weight: 600;
   text-shadow: var(--o3);
 }
 
 .best-value {
-  font-size: 30px;
+  font-size: var(--best-value);
   font-weight: 700;
   text-shadow: var(--o3), 0 4px 0 var(--ink);
   font-variant-numeric: tabular-nums;
@@ -430,11 +490,12 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 104px;
-  padding: 5px 14px 7px;
-  font-size: 26px;
+  height: var(--hud-h);
+  min-width: calc(var(--hud-h) * 2.4);
+  padding: 0 clamp(10px, 3vmin, 14px) 2px;
+  font-size: var(--hud-font);
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1;
   color: var(--white);
   background: var(--chip);
   border-radius: 10px;
@@ -454,9 +515,9 @@ button {
 /* ---------------------------------------------------------------- stats */
 
 .stats-card {
-  padding: 12px 22px;
+  padding: clamp(6px, 2vmin, 12px) clamp(14px, 4vmin, 22px);
   background: var(--card);
-  border-radius: 16px;
+  border-radius: clamp(12px, 3.4vmin, 16px);
   box-shadow: 0 4px 0 rgba(19, 38, 106, 0.3);
 }
 
@@ -465,12 +526,12 @@ button {
   justify-content: space-between;
   align-items: baseline;
   padding: 2px 0;
-  font-size: 22px;
+  font-size: var(--stat-label);
   font-weight: 500;
 }
 
 .stat-row strong {
-  font-size: 28px;
+  font-size: var(--stat-value);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -484,44 +545,13 @@ button {
   }
 }
 
-/* ---------------------------------------------------------------- narrow phones */
-
-@media (max-width: 420px) {
-  .modal {
-    padding: 22px 18px 24px;
-    gap: 14px;
-  }
-  .title {
-    font-size: 44px;
-  }
-  .btn {
-    height: 56px;
-    padding: 0 18px;
-    font-size: 22px;
-    gap: 8px;
-  }
-  .btn .icon {
-    width: 24px;
-    height: 24px;
-  }
-  .btn-secondary {
-    width: 56px;
-    padding: 0;
-  }
-  .btn-secondary .icon {
-    width: 30px;
-    height: 30px;
-  }
-  .stats-card {
-    padding: 10px 18px;
-  }
-}
+/* ---------------------------------------------------------------- small screens */
 
 @media (max-width: 600px), (max-height: 500px) {
-  .chip {
-    min-width: 88px;
-    padding: 4px 12px 6px;
-    font-size: 22px;
+  /* Thinner outlines for the smaller title and logo. */
+  .title,
+  .logo {
+    text-shadow: var(--o3), 0 5px 0 var(--ink);
   }
   .icon-btn {
     width: 46px;
@@ -533,47 +563,11 @@ button {
   }
 }
 
-/* ---------------------------------------------------------------- short landscape phones */
-
+/* Short landscape phones: smaller menu Play button, no controls hint. */
 @media (max-height: 500px) {
-  .modal {
-    width: min(380px, 100%);
-    padding: 16px 22px 20px;
-    gap: 10px;
-  }
-  .title {
-    font-size: 36px;
-    text-shadow: var(--o3), 0 5px 0 var(--ink);
-  }
-  .stats-card {
-    padding: 6px 18px;
-  }
-  .stat-row strong {
-    font-size: 24px;
-  }
-  .btn {
-    height: 50px;
-    font-size: 22px;
-  }
-  .btn-secondary {
-    width: 50px;
-  }
   .btn-play {
     height: 54px;
     width: 160px;
-  }
-  .crown {
-    width: 32px;
-    height: 32px;
-  }
-  .best-value {
-    font-size: 24px;
-  }
-  .best-label {
-    font-size: 14px;
-  }
-  .logo {
-    text-shadow: var(--o3), 0 5px 0 var(--ink);
   }
   .hint {
     display: none;

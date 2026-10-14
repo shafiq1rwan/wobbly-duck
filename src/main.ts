@@ -27,6 +27,8 @@ function start(): void {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
+    // Load images as <img> so they reuse the <link rel="preload"> downloads started in index.html.
+    loader: { imageLoadType: 'HTMLImageElement' },
     render: {
       antialias: true,
       mipmapFilter: 'LINEAR_MIPMAP_LINEAR',

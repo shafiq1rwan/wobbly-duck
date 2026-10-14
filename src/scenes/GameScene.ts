@@ -13,6 +13,7 @@ import { ObstacleManager } from '../game/ObstacleManager';
 import { Splashes } from '../game/Splashes';
 import { Water } from '../game/Water';
 import { platform } from '../platform/Platform';
+import { hideLoader } from '../ui/loader';
 import { UI } from '../ui/UI';
 
 type State = 'menu' | 'playing' | 'paused' | 'crashed' | 'gameover';
@@ -101,6 +102,7 @@ export class GameScene extends Phaser.Scene {
 
     this.duck.reset(this.water);
     this.toMenu();
+    hideLoader();
     platform.loadingFinished();
   }
 

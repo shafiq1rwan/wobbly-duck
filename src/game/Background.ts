@@ -43,12 +43,8 @@ export class Background {
     this.sky = scene.add.image(0, 0, SKY_TEXTURE).setOrigin(0).setDepth(depth);
 
     bg.layers.forEach((spec, i) => {
-      const texture = scene.textures.get(spec.key);
-      const sourceWidth = texture.getSourceImage().width;
-      const cropHeight = spec.cropBottom - spec.cropTop;
-      // Draw only the opaque band. Always reference this frame by name: adding it makes it the default.
-      texture.add('crop', 0, 0, spec.cropTop, sourceWidth, cropHeight);
-      const scale = spec.height / cropHeight;
+      const source = scene.textures.get(spec.key).getSourceImage();
+      const scale = spec.height / source.height;
       this.layers.push({
         scene,
         key: spec.key,
@@ -56,7 +52,7 @@ export class Background {
         images: [],
         y: CONFIG.water.restY + spec.sink - spec.height,
         scale,
-        period: sourceWidth * scale + spec.gap,
+        period: source.width * scale + spec.gap,
         parallax: spec.parallax,
       });
     });
@@ -74,7 +70,7 @@ export class Background {
       const needed = Math.ceil(view.width / layer.period) + 1;
       while (layer.images.length < needed) {
         layer.images.push(
-          layer.scene.add.image(0, layer.y, layer.key, 'crop').setOrigin(0).setScale(layer.scale).setDepth(layer.depth),
+          layer.scene.add.image(0, layer.y, layer.key).setOrigin(0).setScale(layer.scale).setDepth(layer.depth),
         );
       }
       layer.images.forEach((img, i) => {

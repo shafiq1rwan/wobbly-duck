@@ -25,6 +25,13 @@ Colours sampled from the reference; replace the current `:root` values in `style
 | `--overlay` | `rgba(23, 62, 110, 0.55)` + `backdrop-filter: blur(3px)` | Game-over / pause dim |
 | `--star` | `#FFE45C` | Star and crown icons |
 
+**Fluid sizing.** Sizes are CSS variables on `:root` (`--hud-h`, `--btn-h`, `--modal-w`, `--title`, …)
+defined with `clamp(min, N vmin, max)`, so the HUD and the pause/game-over cards scale with the
+screen's smaller side. Desktop/tablet hit the max (the sizes listed below); phones scale down — the
+cards are ~78% of a portrait phone's width with ~40 px buttons. Use these variables instead of fixed
+pixel sizes or per-device breakpoints. The in-game pause button is exactly `--hud-h` square, the
+same height as the distance chip.
+
 **Type.** Chunky rounded sans. Fredoka 600/700 is already bundled and is close; headings in the
 reference are heavier, so `Lilita One` (OFL, available as `@fontsource/lilita-one`) is an option
 for titles and big numbers only. Large text on top of the scene is white with a navy stroke

@@ -49,7 +49,8 @@ src/game/                Duck (controller), DuckView (visuals + squash/stretch),
                          ObstacleManager, Background
 src/scenes/              BootScene (loading), GameScene (state machine + loop)
 src/ui/UI.ts + style.css DOM menus and HUD
-public/assets/           Runtime assets (everything here ships in the build)
+assets-src/              High-res source art (versioned, NOT shipped)
+public/assets/           Optimised runtime assets — generated WebPs (everything here ships)
 tools/                   Asset processing scripts (not shipped)
 docs/                    Specs and reference images (not shipped)
 ```
@@ -79,8 +80,12 @@ docs/                    Specs and reference images (not shipped)
 
 Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.md). In short:
 
-- Put runtime files in `public/assets/` with kebab-case names and load them in `BootScene.preload`
-  using `` `${import.meta.env.BASE_URL}assets/<file>` ``.
+- **Loading speed matters (Poki).** Put source art in `assets-src/`, add it to the MANIFEST in
+  `tools/optimize-images.py` (crop, max height, WebP quality) and run
+  `python tools/optimize-images.py` — it writes WebPs to `public/assets/`. Never copy raw PNGs into
+  `public/`. Load files in `BootScene.preload` with `` `${import.meta.env.BASE_URL}assets/<file>` ``
+  and add a matching `<link rel="preload" as="image">` in `index.html`.
+- The loading screen is inline HTML/CSS in `index.html`; progress comes from `src/ui/loader.ts`.
 - Use transparent PNGs with real alpha. A strip on a white background can be converted with
   `python tools/process-duck-strip.py <strip.png> <out_dir>`.
 - **Never put notes or docs in `public/`** — Vite copies the whole folder into the build.

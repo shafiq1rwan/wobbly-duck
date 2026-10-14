@@ -18,6 +18,8 @@ function $(id: string): HTMLElement {
 }
 
 const numberFormat = new Intl.NumberFormat('en-US');
+/** Lets the release wobble start before the screen changes (still feels instant). */
+const ACTION_DELAY_MS = 110;
 const fmt = (n: number): string => numberFormat.format(n);
 
 /**
@@ -38,14 +40,36 @@ export class UI {
   constructor(handlers: UIHandlers) {
     const bind = (id: string, fn: () => void) => {
       const el = $(id);
+      let pending = false;
+      // Squishy feedback: squash while held, jelly wobble on release (see .pressed / .jelly in CSS).
+      el.addEventListener('pointerdown', (e) => {
+        e.stopPropagation(); // keep button presses from being read as swipes
+        el.classList.remove('jelly');
+        el.classList.add('pressed');
+        handlers.onButton();
+      });
+      const release = () => {
+        if (!el.classList.contains('pressed')) return;
+        el.classList.remove('pressed');
+        void el.offsetWidth; // restart the animation
+        el.classList.add('jelly');
+      };
+      el.addEventListener('pointerup', release);
+      el.addEventListener('pointercancel', release);
+      el.addEventListener('pointerleave', release);
+      el.addEventListener('animationend', () => el.classList.remove('jelly'));
       el.addEventListener('click', (e) => {
         e.preventDefault();
         (el as HTMLButtonElement).blur();
-        handlers.onButton();
-        fn();
+        if (pending) return;
+        pending = true;
+        setTimeout(() => {
+          pending = false;
+          fn();
+          // If the button's screen just closed, drop the class so it doesn't replay when shown again.
+          if (!el.offsetParent) el.classList.remove('jelly');
+        }, ACTION_DELAY_MS);
       });
-      // Keep button presses from being read as swipes.
-      el.addEventListener('pointerdown', (e) => e.stopPropagation());
     };
     bind('btn-play', handlers.onPlay);
     bind('btn-pause', handlers.onPause);
