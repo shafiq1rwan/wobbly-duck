@@ -1,0 +1,44 @@
+[
+  {
+    "file": "log.png",
+    "width": 2172,
+    "height": 724,
+    "visibleBounds": {
+      "height": 269,
+      "width": 1333,
+      "x": 420,
+      "y": 240
+    },
+    "edgeAlphaMax": 0,
+    "cornerAlpha": 0,
+    "centerAlpha": 253
+  },
+  {
+    "file": "box.png",
+    "width": 1254,
+    "height": 1254,
+    "visibleBounds": {
+      "height": 799,
+      "width": 891,
+      "x": 182,
+      "y": 263
+    },
+    "edgeAlphaMax": 0,
+    "cornerAlpha": 0,
+    "centerAlpha": 254
+  },
+  {
+    "file": "mid-air-loop.png",
+    "width": 1254,
+    "height": 1254,
+    "visibleBounds": {
+      "height": 987,
+      "width": 710,
+      "x": 273,
+      "y": 123
+    },
+    "edgeAlphaMax": 0,
+    "cornerAlpha": 0,
+    "centerAlpha": 0
+  }
+]
