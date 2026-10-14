@@ -10,6 +10,7 @@ import skins from '@phosphor-icons/core/fill/coat-hanger-fill.svg?raw';
 import crown from '@phosphor-icons/core/fill/crown-fill.svg?raw';
 import flag from '@phosphor-icons/core/fill/flag-fill.svg?raw';
 import home from '@phosphor-icons/core/fill/house-fill.svg?raw';
+import tip from '@phosphor-icons/core/fill/lightbulb-fill.svg?raw';
 import lock from '@phosphor-icons/core/fill/lock-simple-fill.svg?raw';
 import ad from '@phosphor-icons/core/fill/monitor-play-fill.svg?raw';
 import pause from '@phosphor-icons/core/fill/pause-fill.svg?raw';
@@ -24,6 +25,7 @@ const ICONS: Record<string, string> = {
   check,
   lock,
   skins,
+  tip,
   replay,
   crown,
   flag,

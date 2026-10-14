@@ -46,7 +46,16 @@
           </div>
         </div>
         <div id="hud-score" class="hud-score">0</div>
-        <div id="toast" class="toast" hidden></div>
+        <!-- Tips and short messages: a card low in the water, clear of the play lane and the sky. -->
+        <div id="toast" class="toast" hidden>
+          <span class="toast-badge" aria-hidden="true"><svg class="icon"><use href="#i-tip" /></svg></span>
+          <span id="toast-text" class="toast-text"></span>
+        </div>
+        <!-- Beat your best score: pops in with the party poppers. -->
+        <div id="record-banner" class="record-banner" hidden>
+          <svg class="crown"><use href="#i-crown" /></svg>
+          <span class="record-text">New Record!</span>
+        </div>
         <div id="touch-zones" class="touch-zones" aria-hidden="true" hidden>
           <span class="zone">JUMP</span>
           <span class="zone">DASH</span>
@@ -95,10 +104,14 @@
       <div id="shop" class="screen shop-screen" hidden>
         <div class="modal modal-shop">
           <div class="shop-head">
-            <h2 class="title shop-title">Skins</h2>
+            <h2 class="title shop-title"><span class="shop-title-main">Skins</span><span id="shop-skin-name" class="shop-title-skin"></span></h2>
             <div class="bank"><svg class="icon bank-icon"><use href="#i-star" /></svg><span id="shop-bank">0</span></div>
           </div>
-          <div id="shop-grid" class="shop-grid"></div>
+          <!-- Drag-to-scroll list (no browser scrollbar): momentum, rubber-band ends, chunky handle. -->
+          <div id="shop-scroll" class="shop-scroll">
+            <div id="shop-viewport" class="shop-viewport"><div id="shop-grid" class="shop-grid"></div></div>
+            <div class="shop-track" aria-hidden="true"><div id="shop-thumb" class="shop-thumb"></div></div>
+          </div>
           <div class="btn-row">
             <button id="btn-shop-back" class="btn btn-secondary" aria-label="Back">
               <svg class="icon"><use href="#i-back" /></svg>

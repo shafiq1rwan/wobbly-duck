@@ -1,6 +1,6 @@
 import { CONFIG } from '../config';
 
-export type Sfx = 'jump' | 'dash' | 'splashSmall' | 'splashBig' | 'hit' | 'click' | 'pickup' | 'bonus' | 'crate' | 'peep' | 'peepSad' | 'doubleJump' | 'boing' | 'ribbit' | 'fanfare' | 'revive' | 'unlock';
+export type Sfx = 'jump' | 'dash' | 'splashSmall' | 'splashBig' | 'hit' | 'click' | 'pickup' | 'bonus' | 'crate' | 'peep' | 'peepSad' | 'doubleJump' | 'boing' | 'ribbit' | 'fanfare' | 'revive' | 'unlock' | 'popper';
 
 /** Ignore repeats of the same effect closer together than this (s). */
 const MIN_REPEAT = 0.04;
@@ -117,6 +117,12 @@ export class AudioManager {
         this.tone('triangle', 659, 659, 0.12, 0.16, 0.09);
         this.tone('triangle', 784, 784, 0.12, 0.16, 0.18);
         this.tone('sine', 1047, 1047, 0.3, 0.14, 0.27);
+        break;
+      case 'popper':
+        // Party popper: a sharp pop, then a papery fizz.
+        this.noiseBurst(0.07, 0.4, 'bandpass', 1600, 900, 0.9);
+        this.tone('sine', 700, 160, 0.09, 0.16);
+        this.noiseBurst(0.45, 0.07, 'highpass', 5000, 3000);
         break;
       case 'revive':
         // Back in the water: a long upward sweep with a sparkle on top.

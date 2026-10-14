@@ -59,6 +59,8 @@ export class UI {
     gameover: $('gameover'),
   };
   private readonly shopGrid = $('shop-grid');
+  private readonly shopViewport = $('shop-viewport');
+  private readonly shopScroll = $('shop-scroll');
   private readonly shopCards = new Map<string, HTMLElement>();
   private readonly distanceEl = $('hud-distance');
   private readonly scoreEl = $('hud-score');
@@ -120,6 +122,32 @@ export class UI {
     bind('btn-shop-action', handlers.onShopAction);
     bind('btn-revive', handlers.onRevive);
     bind('btn-revive-skip', handlers.onReviveSkip);
+    this.initShopScroll();
+    // Re-fit when the cards' size settles (fonts, images) or the screen changes.
+    new ResizeObserver(() => this.fitShopRows()).observe(this.shopGrid);
+    window.addEventListener('resize', () => this.fitShopRows());
+  }
+
+  /** Pops "New Record!" in under the score (it floats away by itself). */
+  showRecord(): void {
+    const el = $('record-banner');
+    el.hidden = false;
+    el.onanimationend = (e) => {
+      if (e.target === el) el.hidden = true;
+    };
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  }
+
+  /** A skin was just bought: its card pops and shines. */
+  shopUnlocked(id: string): void {
+    const card = this.shopCards.get(id);
+    if (!card) return;
+    card.classList.remove('unlocked-now');
+    void card.offsetWidth;
+    card.classList.add('unlocked-now');
+    card.addEventListener('animationend', () => card.classList.remove('unlocked-now'), { once: true });
   }
 
   setMuted(muted: boolean): void {
@@ -134,6 +162,7 @@ export class UI {
     const s = this.screens;
     s.menu.hidden = screen !== 'menu';
     s.shop.hidden = screen !== 'shop';
+    if (screen === 'shop') requestAnimationFrame(() => this.fitShopRows());
     s.hud.hidden = screen !== 'playing' && screen !== 'paused';
     s.pause.hidden = screen !== 'paused';
     s.revive.hidden = screen !== 'revive';
@@ -162,6 +191,7 @@ export class UI {
           : `<svg class="icon"><use href="#i-star" /></svg>${fmt(item.price)}`;
     }
     const sel = v.items.find((i) => i.id === v.selected) ?? v.items[0];
+    $('shop-skin-name').textContent = sel.name;
     const action = $('btn-shop-action');
     const affordable = sel.price <= v.bank;
     const [icon, text] = sel.owned
@@ -202,6 +232,119 @@ export class UI {
       this.shopGrid.append(card);
       this.shopCards.set(item.id, card);
     }
+    // Teaser for skins still being drawn: a navy silhouette of the duck.
+    const soon = document.createElement('div');
+    soon.className = 'skin-card coming-soon';
+    soon.setAttribute('aria-label', 'More skins coming soon');
+    soon.innerHTML = `<span class="skin-img" style="--sheet:url('${base}duck-sheet.webp')"><span class="soon-mark">?</span></span><span class="skin-name">???</span><span class="skin-price">Coming soon</span>`;
+    this.shopGrid.append(soon);
+    requestAnimationFrame(() => this.fitShopRows());
+  }
+
+  /** The list shows at most three rows; more scroll. */
+  private fitShopRows(): void {
+    const card = this.shopGrid.firstElementChild as HTMLElement | null;
+    if (!card || this.screens.shop.hidden) return;
+    const gap = parseFloat(getComputedStyle(this.shopGrid).rowGap) || 0;
+    this.shopViewport.style.maxHeight = `${card.offsetHeight * 3 + gap * 2 + 8}px`;
+    this.updateShopScroll();
+  }
+
+  /** Edge fades and the handle follow the scroll position. */
+  private updateShopScroll(): void {
+    const v = this.shopViewport;
+    const max = v.scrollHeight - v.clientHeight;
+    const scrollable = max > 2;
+    this.shopScroll.classList.toggle('scrollable', scrollable);
+    this.shopScroll.classList.toggle('can-up', scrollable && v.scrollTop > 2);
+    this.shopScroll.classList.toggle('can-down', scrollable && v.scrollTop < max - 2);
+    if (!scrollable) return;
+    const track = v.clientHeight - 8;
+    const thumbH = Math.max(28, (track * v.clientHeight) / v.scrollHeight);
+    const thumb = $('shop-thumb');
+    thumb.style.height = `${thumbH}px`;
+    thumb.style.transform = `translateY(${((track - thumbH) * v.scrollTop) / max}px)`;
+  }
+
+  /**
+   * Game-style scrolling for the skins list: drag with a finger or the mouse, it keeps gliding after
+   * release, and pulling past an end stretches the list, which springs back. A drag never taps a card.
+   */
+  private initShopScroll(): void {
+    const v = this.shopViewport;
+    const grid = this.shopGrid;
+    let pointer: number | null = null;
+    let startY = 0;
+    let startTop = 0;
+    let lastY = 0;
+    let lastT = 0;
+    let velocity = 0; // px per ms, positive = content moving up
+    let dragging = false;
+    let glide = 0;
+
+    const stretch = (over: number) => {
+      grid.classList.remove('settle');
+      grid.style.transform = over ? `translateY(${Math.sign(over) * Math.sqrt(Math.abs(over)) * 5}px)` : '';
+    };
+    const settle = () => {
+      grid.classList.add('settle');
+      grid.style.transform = '';
+    };
+
+    v.addEventListener('scroll', () => this.updateShopScroll());
+    v.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        cancelAnimationFrame(glide);
+        pointer = e.pointerId;
+        startY = lastY = e.clientY;
+        startTop = v.scrollTop;
+        lastT = performance.now();
+        velocity = 0;
+        dragging = false;
+      },
+      true,
+    );
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pointer) return;
+      const dy = e.clientY - startY;
+      if (!dragging && Math.abs(dy) < 8) return;
+      if (!dragging) {
+        dragging = true;
+        this.shopScroll.classList.add('dragging');
+      }
+      const max = v.scrollHeight - v.clientHeight;
+      const want = startTop - dy;
+      v.scrollTop = Math.max(0, Math.min(max, want));
+      stretch(want < 0 ? -want : want > max ? max - want : 0);
+      const now = performance.now();
+      const dt = Math.max(1, now - lastT);
+      velocity = 0.7 * velocity + 0.3 * ((lastY - e.clientY) / dt);
+      lastY = e.clientY;
+      lastT = now;
+    });
+    const release = (e: PointerEvent) => {
+      if (e.pointerId !== pointer) return;
+      pointer = null;
+      this.shopScroll.classList.remove('dragging');
+      settle();
+      if (!dragging) return;
+      // A drag is not a tap: swallow the click that follows.
+      v.addEventListener('click', (c) => (c.stopPropagation(), c.preventDefault()), { capture: true, once: true });
+      setTimeout(() => (dragging = false), 0);
+      let prev = performance.now();
+      const step = (now: number) => {
+        const dt = now - prev;
+        prev = now;
+        v.scrollTop += velocity * dt;
+        velocity *= Math.pow(0.94, dt / 16);
+        if (Math.abs(velocity) > 0.02) glide = requestAnimationFrame(step);
+      };
+      glide = requestAnimationFrame(step);
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
   }
 
   // ------------------------------------------------------------------ revive
@@ -274,9 +417,14 @@ export class UI {
     restartAnimation(chip, event === 'join' ? 'pop' : 'shake');
   }
 
-  /** A short message under the score (e.g. the first-duckling hint). */
-  showToast(message: string, seconds = 3.5): void {
-    this.toastEl.textContent = message;
+  /**
+   * A short message on a card low in the water. `tip` (first-time hints) shows a lightbulb badge;
+   * `info` is a plain message. It pops up, then sinks and fades after `seconds`.
+   */
+  showToast(message: string, seconds = 4, kind: 'tip' | 'info' = 'tip'): void {
+    $('toast-text').textContent = message;
+    this.toastEl.classList.toggle('info', kind === 'info');
+    this.toastEl.style.setProperty('--toast-time', `${seconds}s`);
     this.toastEl.hidden = false;
     restartAnimation(this.toastEl, 'show');
     clearTimeout(this.toastTimer);

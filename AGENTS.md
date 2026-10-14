@@ -50,6 +50,7 @@ src/game/                Duck (controller), DuckView (visuals + squash/stretch),
                          ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
                          ObstacleManager (log/crate/rock), FoodManager, LilyPads (bounce pads + frogs),
                          Parade (ducklings), BestMarker (best-distance flag), Skins (owned/worn skins),
+                         Confetti (party poppers + confetti),
                          ScorePopups, Patterns (handcrafted
                          patterns + Spawner, difficulty tiers), Background
 src/scenes/              BootScene (loading), GameScene (state machine + loop)

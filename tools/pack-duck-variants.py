@@ -67,6 +67,12 @@ for i, points in enumerate(objects):
     ratios.append(ref_width / (x1 - x0))
     frames.append((frame, eye(frame), eye(ref)))
 scale = float(np.median(ratios))
+# Keep tiny crests or wider poses inside their cells, without changing per-frame scale.
+for frame, source_eye, target_eye in frames:
+    ex, ey = source_eye
+    tx, ty = target_eye
+    scale = min(scale, (tx - 2) / ex, (254 - tx) / (frame.width - ex),
+                (ty - 2) / ey, (254 - ty) / (frame.height - ey))
 sheet = Image.new('RGBA', (2048, 256))
 for i, (frame, source_eye, target_eye) in enumerate(frames):
     width, height = round(frame.width * scale), round(frame.height * scale)

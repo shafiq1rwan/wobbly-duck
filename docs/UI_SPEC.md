@@ -94,11 +94,19 @@ over a light dim, so the duck stays visible: tapping a skin shows it on the swim
 | Element | Content |
 | --- | --- |
 | Header | "Skins" title, bank pill on the right |
-| Grid | One card per `CONFIG.skins` entry: frame 0 of its sheet, name, then `★ price`, `Owned` or `✓ Wearing`. As many columns as fit (4 desktop / landscape, 3 portrait); more skins add rows and the grid scrolls |
+| Grid | One card per `CONFIG.skins` entry: frame 0 of its sheet, name, then `★ price`, `Owned` or `✓ Wearing`. Last card: a navy duck silhouette with "?", `???` and `Coming soon` (not tappable). As many columns as fit (4 desktop / landscape, 3 portrait); more skins add rows and the grid scrolls |
 | Buttons | Back (secondary, arrow) + main button: `Play` (owned skin selected), `★ Unlock 15,000` (locked, affordable) or greyed `🔒 Need 3,200 more` (shakes when pressed) |
 
-Tapping an owned skin wears it at once. Unlocking spends the bank and wears the skin. Back or Esc
-returns to the menu wearing the last owned skin picked.
+Tapping an owned skin wears it at once. Unlocking spends the bank and wears the skin, with a
+celebration: confetti in the skin's own colours (`colors` in `CONFIG.skins`) bursts from the duck,
+which hops and somersaults, and the card pops with a shine. Back or Esc returns to the menu wearing
+the last owned skin picked.
+
+- **Scrolling** is game-style, not a web page: no scrollbar; drag (finger or mouse) with momentum,
+  a rubber-band stretch at the ends, soft fades at edges with more cards, and a chunky yellow handle.
+  At most three rows show at once. A drag never taps a card.
+- **Short landscape phones** (height ≤ 500 px): compact cards (duck + price, 3 across × 3 down); the
+  header shows the selected duck's name instead of "Skins".
 
 ### Gameplay HUD
 
@@ -115,7 +123,17 @@ returns to the menu wearing the last owned skin picked.
 
 **Best-distance flag** (in the world, not the HUD): a yellow pennant on a pole, `BEST 742 m`, planted
 in the river at the best distance once it is at least `CONFIG.bestMarker.minMetres`. Swimming past it
-shows the toast "New best distance!" with a fanfare.
+shows the toast "New best distance!" with a fanfare and a small confetti fountain.
+
+**Tip card** (first-time hints, `UI.showToast`): a light pill card with a navy outline and a yellow
+lightbulb badge, centred low in the water above the credit, never under the score: the sky holds
+jump arcs and sky corn, and the swim lane holds the duck and obstacles. It pops up from below, then
+sinks and fades (4 s by default). Plain messages such as "New best distance!" use it without the badge.
+
+**New record** (the run's score passes the best score, once per run): a big yellow "New Record!"
+with a crown bounces in under the score and floats away (~2.6 s), while two striped party poppers
+spring out of the bottom corners, pop one after the other and shower confetti — paper, duck
+feathers and corn kernels (`src/game/Confetti.ts`, tuning in `CONFIG.celebration`).
 
 ### Revive offer
 

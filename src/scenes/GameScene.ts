@@ -8,6 +8,7 @@ import { frameCamera, type ViewBounds } from '../core/Viewport';
 import { Background } from '../game/Background';
 import { BestMarker } from '../game/BestMarker';
 import { CameraShake } from '../game/CameraShake';
+import { Confetti } from '../game/Confetti';
 import { DashMeter } from '../game/DashMeter';
 import { Duck } from '../game/Duck';
 import { DuckView } from '../game/DuckView';
@@ -26,7 +27,7 @@ import { UI } from '../ui/UI';
 type State = 'menu' | 'playing' | 'paused' | 'crashed' | 'revive' | 'gameover';
 
 /** Background uses 0–4 (sky + parallax layers); the ocean body sits behind obstacles, the water tint in front. */
-const DEPTH = { background: 0, waterBack: 5, marker: 7, pads: 9, obstacles: 10, frogs: 11, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, debug: 100 };
+const DEPTH = { background: 0, waterBack: 5, marker: 7, pads: 9, obstacles: 10, frogs: 11, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, confetti: 38, debug: 100 };
 const DEBUG = new URLSearchParams(window.location.search).has('debug');
 /** Ignore restart input for a moment after the game-over screen appears (prevents mash-restarts). */
 const RESTART_LOCKOUT = 0.35;
@@ -60,6 +61,10 @@ export class GameScene extends Phaser.Scene {
   private pads!: LilyPads;
   private popups!: ScorePopups;
   private marker!: BestMarker;
+  private confetti!: Confetti;
+  /** Best score when the run started, and whether beating it has been celebrated yet. */
+  private recordToBeat = 0;
+  private recordCelebrated = false;
   private readonly skins = new Skins();
   /** Shop: open on the menu; the skin selected (worn, or tried on); the skin last asked to show. */
   private shopOpen = false;
@@ -117,6 +122,7 @@ export class GameScene extends Phaser.Scene {
     this.pads = new LilyPads(this, DEPTH.pads, DEPTH.frogs, this.padEvents);
     this.popups = new ScorePopups(this, DEPTH.popups);
     this.marker = new BestMarker(this, DEPTH.marker, this.onBestPassed);
+    this.confetti = new Confetti(this, DEPTH.confetti, () => this.audio.play('popper'));
     this.dashMeter = new DashMeter(this, DEPTH.meter);
     this.audio = new AudioManager(loadNumber('muted') === 1);
     this.duck = new Duck(0);
@@ -213,6 +219,8 @@ export class GameScene extends Phaser.Scene {
     this.spawner.active = true;
     this.runStart = this.worldDistance;
     this.marker.start(this.runStart, this.best);
+    this.recordToBeat = this.bestScore;
+    this.recordCelebrated = false;
     this.revived = false;
     this.graceTime = 0;
     this.speed = this.baseSpeed();
@@ -396,10 +404,24 @@ export class GameScene extends Phaser.Scene {
     saveNumber('scoreBank', this.scoreBank);
     this.skins.unlock(id);
     this.skins.equip(id);
-    this.audio.play('unlock');
-    this.duckView.onBounce();
-    this.splashes.sparkle(this.duck.x, this.duck.y - 20, 18, [0xffffff, 0xffe45c, 0xff994a]);
     this.refreshShop();
+    this.celebrateUnlock(id);
+  }
+
+  /** Every unlock: confetti in the skin's own colours bursts from the duck, which hops and flips. */
+  private celebrateUnlock(id: SkinId): void {
+    const colors = this.skins.info(id).colors;
+    this.ui.shopUnlocked(id);
+    this.audio.play('popper');
+    this.audio.play('unlock');
+    this.confetti.fountain(this.duck.x, this.duck.y - 30, this.view, colors, 70, 300);
+    this.splashes.sparkle(this.duck.x, this.duck.y - 20, 18, colors);
+    this.water.disturb(this.duck.x, 140, 50);
+    // A happy hop with a somersault at the top (the duck's own double jump).
+    this.duck.requestJump();
+    this.time.delayedCall(330, () => {
+      if (this.state === 'menu') this.duck.requestJump();
+    });
   }
 
   private refreshShop(): void {
@@ -490,6 +512,7 @@ export class GameScene extends Phaser.Scene {
     this.frameDx = 0;
     for (let i = 0; i < steps; i++) this.step(h);
     this.marker.update(dt, this.worldDistance, this.duck.anchorX, this.duck.x, this.water, this.view);
+    this.confetti.update(dt, this.view);
 
     this.duckEffects(dt);
     this.duckView.sync(this.duck, dt);
@@ -574,7 +597,7 @@ export class GameScene extends Phaser.Scene {
       this.parade.spawnLost(x, this.water);
       if (!loadNumber('seenDuckling')) {
         saveNumber('seenDuckling', 1);
-        this.ui.showToast('Swim into ducklings — they follow you and multiply your score!');
+        this.ui.showToast('Swim into ducklings: they follow you and multiply your score!', 4.5);
       }
     } else if (entry.food) {
       const F = CONFIG.food;
@@ -599,6 +622,7 @@ export class GameScene extends Phaser.Scene {
     const points = base * this.parade.multiplier;
     this.score += points;
     this.ui.setScore(this.score);
+    if (!this.recordCelebrated && this.recordToBeat > 0 && this.score > this.recordToBeat) this.celebrateRecord();
     const bonus = base >= CONFIG.food.bonusPoints;
     this.popups.show(x, y, points, bonus || this.parade.count >= 3);
     const effect = CONFIG.food.pickup;
@@ -649,10 +673,19 @@ export class GameScene extends Phaser.Scene {
   /** Swam past the best-distance flag. */
   private readonly onBestPassed = (x: number, y: number): void => {
     if (this.state !== 'playing') return;
-    this.ui.showToast('New best distance!', 2.5);
+    this.ui.showToast('New best distance!', 2.5, 'info');
     this.splashes.sparkle(x, y, 18, [0xffffff, 0xffe45c, 0xff994a]);
+    this.confetti.fountain(x, y, this.view, CONFIG.celebration.colors, 30, 160);
     this.audio.play('fanfare');
   };
+
+  /** The run's score just passed the best score: banner, party poppers, fanfare (once per run). */
+  private celebrateRecord(): void {
+    this.recordCelebrated = true;
+    this.ui.showRecord();
+    this.confetti.partyPoppers(CONFIG.celebration.colors);
+    this.audio.play('fanfare');
+  }
 
   /** Shows a first-time hint once per device. */
   private hintOnce(key: string, message: string): void {

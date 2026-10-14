@@ -459,14 +459,35 @@ export const CONFIG = {
   /**
    * Duck skins, bought with the score bank (every run's score added up). Each file is a duck sheet
    * with the same layout as duck-sheet.webp (see src/art/duckSprite.ts). The first skin is free.
-   * Order here is the shop order. A typical 30–60 s run scores ~15k–35k.
+   * Order here is the shop order. A typical 30–60 s run scores ~15k–35k. `colors` is the skin's
+   * palette, used for its unlock confetti.
    */
   skins: [
-    { id: 'classic', name: 'Classic', file: 'duck-sheet.webp', price: 0 },
-    { id: 'pekin', name: 'Pekin', file: 'duck-pekin.webp', price: 15_000 },
-    { id: 'khaki', name: 'Khaki', file: 'duck-khaki.webp', price: 40_000 },
-    { id: 'mallard', name: 'Mallard', file: 'duck-mallard.webp', price: 100_000 },
+    { id: 'classic', name: 'Classic', file: 'duck-sheet.webp', price: 0, colors: [0xffd93f, 0xff994a, 0xfff3b0] },
+    { id: 'pekin', name: 'Pekin', file: 'duck-pekin.webp', price: 15_000, colors: [0xffffff, 0xf3ead8, 0xff8a3d, 0xd9dde6] },
+    { id: 'khaki', name: 'Khaki', file: 'duck-khaki.webp', price: 40_000, colors: [0xc98b55, 0x7a4a2e, 0xf2dcb5, 0xff8a3d] },
+    { id: 'tufted', name: 'Tufted', file: 'duck-tufted.webp', price: 70_000, colors: [0x575d78, 0xffffff, 0xbfc3d0, 0xff8a3d] },
+    { id: 'wigeon', name: 'Wigeon', file: 'duck-wigeon.webp', price: 100_000, colors: [0xb5653f, 0xf6e7c8, 0x9aa3b5, 0xe3a1a0] },
+    { id: 'mallard', name: 'Mallard', file: 'duck-mallard.webp', price: 150_000, colors: [0x1f7a4a, 0x8a3b24, 0xd0d0d0, 0xfff3d6] },
+    { id: 'mandarin', name: 'Mandarin', file: 'duck-mandarin.webp', price: 250_000, colors: [0xe8762c, 0xfff0d6, 0xb8442e, 0x6b6fb8, 0xf2b63a] },
   ],
+
+  /** Party poppers and confetti (new record, skin unlocks). Lengths are in 660-unit view heights. */
+  celebration: {
+    pieces: 180,
+    /** Gravity and the slowest fall of fluttering paper, × 660 units (scaled to the view). */
+    gravity: 2.4,
+    maxFall: 0.36,
+    drag: 1.4,
+    /** Seconds each piece lives. */
+    life: [2.4, 3.6],
+    /** Popper height, and how high its confetti flies (fraction of the view height). */
+    popperHeight: 0.2,
+    popperReach: 0.8,
+    perPopper: 70,
+    /** Party colours for the record poppers. */
+    colors: [0xffd93f, 0xff994a, 0xff6fa8, 0x7fe0c4, 0x7cc8ff, 0xffffff],
+  },
 
   /** "Beat your best" flag on the river at the best distance so far. */
   bestMarker: {

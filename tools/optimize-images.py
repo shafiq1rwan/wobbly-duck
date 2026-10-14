@@ -24,6 +24,9 @@ MANIFEST = [
     ('duck-variants-v1/pekin-sheet.png', 'duck-pekin.webp', None, None, 90),
     ('duck-variants-v1/khaki-sheet.png', 'duck-khaki.webp', None, None, 90),
     ('duck-variants-v1/mallard-sheet.png', 'duck-mallard.webp', None, None, 90),
+    ('duck-variants-v2/tufted-sheet.png', 'duck-tufted.webp', None, None, 90),
+    ('duck-variants-v2/wigeon-sheet.png', 'duck-wigeon.webp', None, None, 90),
+    ('duck-variants-v2/mandarin-sheet.png', 'duck-mandarin.webp', None, None, 90),
     # Four-frame reaction sheets: preserve 256x256 cells.
     ('duck-reactions-v1/duck-land-sheet.png', 'duck-land-sheet.webp', None, None, 90),
     ('duck-reactions-v1/duck-hurt-sheet.png', 'duck-hurt-sheet.webp', None, None, 90),
