@@ -17,9 +17,9 @@
     <link rel="preload" as="image" href="./assets/obstacle-log-v2.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/obstacle-box-v2.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/obstacle-rock-v2.webp" type="image/webp" />
-    <link rel="preload" as="image" href="./assets/food-seed.webp" type="image/webp" />
-    <link rel="preload" as="image" href="./assets/food-peas.webp" type="image/webp" />
-    <link rel="preload" as="image" href="./assets/food-corn.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/food-peas-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/food-corn-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/food-bonus-corn-v2.webp" type="image/webp" />
     <!-- Sky colour for the first paint, before CSS and the game canvas arrive. -->
     <style>html { background: #3ac3fd; }</style>
   </head>
@@ -32,9 +32,6 @@
       <!-- Gameplay HUD -->
       <div id="hud" class="screen" hidden>
         <div class="hud-chips">
-          <div id="chip-food" class="chip">
-            <img class="chip-icon" src="./assets/food-seed.webp" alt="" /><span id="hud-food">0</span>
-          </div>
           <div class="chip"><span id="hud-distance">0</span>&nbsp;m</div>
         </div>
         <button id="btn-pause" class="icon-btn icon-btn-square" aria-label="Pause">
@@ -62,6 +59,10 @@
               <span class="best-label">Best Distance</span>
               <span class="best-value"><span id="menu-best">0</span> m</span>
             </div>
+          </div>
+          <!-- Corn bank: collected across all runs; will unlock duck skins. -->
+          <div class="bank" aria-label="Corn collected">
+            <img class="bank-icon" src="./assets/food-corn-v2.webp" alt="" /><span id="menu-bank">0</span>
           </div>
         </div>
         <p id="menu-hint" class="hint">
@@ -99,7 +100,7 @@
               <strong><span id="go-distance">0</span> m</strong>
             </div>
             <div class="stat-row">
-              <span class="stat-label"><img class="stat-icon" src="./assets/food-seed.webp" alt="" />Food</span>
+              <span class="stat-label"><img class="stat-icon" src="./assets/food-corn-v2.webp" alt="" />Corn</span>
               <strong id="go-food">0</strong>
             </div>
           </div>

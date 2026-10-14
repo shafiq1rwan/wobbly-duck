@@ -254,37 +254,40 @@ export const CONFIG = {
       log: {
         key: 'obstacle-log',
         file: 'obstacle-log-v2.webp',
-        scale: 0.42, // ≈127×26 units
+        scale: 0.578, // ≈175×36 units — about 1.8× the duck's width
         originX: 0.5,
         originY: 0.5,
-        floatOffset: 2,
+        floatOffset: 4,
+        top: 14, // visual top above the water line
         waveFollow: 1,
         tilt: 1,
-        hit: { halfW: 55, halfH: 9, offsetY: 0 },
+        hit: { halfW: 77, halfH: 13, offsetY: 0 },
         breakable: false,
       },
       crate: {
         key: 'obstacle-crate',
         file: 'obstacle-box-v2.webp',
-        scale: 0.37, // ≈65×59 units, about a third under water
+        scale: 0.68, // ≈120×108 units (a bit bigger than the duck), about a third under water
         originX: 0.5,
         originY: 0.5,
-        floatOffset: -9,
+        floatOffset: -18,
+        top: 72,
         waveFollow: 1,
-        tilt: 0.6,
-        hit: { halfW: 27, halfH: 25, offsetY: 0 },
+        tilt: 0.5,
+        hit: { halfW: 54, halfH: 47, offsetY: 0 },
         breakable: true,
       },
       rock: {
         key: 'obstacle-rock',
         file: 'obstacle-rock-v2.webp',
-        scale: 0.5, // ≈102 units wide, ≈49 above the water line
+        scale: 0.634, // ≈130 units wide, ≈62 above the water line
         originX: 0.5,
         originY: 136 / 192, // the art's waterline
         floatOffset: 0,
+        top: 62,
         waveFollow: 0.15,
         tilt: 0,
-        hit: { halfW: 42, halfH: 22, offsetY: -22 },
+        hit: { halfW: 48, halfH: 27, offsetY: -27 }, // narrower than the base: the top is rounded
         breakable: false,
       },
     },
@@ -297,14 +300,34 @@ export const CONFIG = {
   food: {
     poolSize: 48,
     kinds: {
-      seed: { key: 'food-seed', file: 'food-seed.webp', scale: 0.5, points: 1 },
-      peas: { key: 'food-peas', file: 'food-peas.webp', scale: 0.5, points: 1 },
-      corn: { key: 'food-corn', file: 'food-corn.webp', scale: 0.62, points: 5 },
+      corn: { key: 'food-corn', file: 'food-corn-v2.webp', scale: 0.5, points: 1 },
+      peas: { key: 'food-peas', file: 'food-peas-v2.webp', scale: 0.5, points: 1 },
+      /** Rare bonus: a distinct bundle of three corn puffs. */
+      bigCorn: { key: 'food-bonus-corn', file: 'food-bonus-corn-v2.webp', scale: 0.78, points: 5 },
     },
     /** Added to the duck's collider radius. Generous: missing food should feel like a choice. */
     pickupRadius: 24,
+    /** Food on the water floats this high (duck-centre units) — a small gap above the surface. */
+    lowHeight: 20,
+    /** Gap between an obstacle's top and food resting on it. */
+    onTopGap: 6,
     bobAmplitude: 4,
     bobFrequency: 1.3,
+    pulseAmplitude: 0.055,
+    pulseFrequency: 0.8,
+    pickup: {
+      duration: 0.26,
+      popAmount: 0.28,
+      rise: 28,
+      shrink: 0.55,
+      sparkCount: 7,
+      bonusSparkCount: 12,
+      ringDuration: 0.24,
+      ringStartRadius: 6,
+      ringEndRadius: 26,
+      bonusRingEndRadius: 38,
+      ringWidth: 2.5,
+    },
   },
 
   /** Endless pattern spawning (see src/game/Patterns.ts). Gaps are seconds of travel between patterns. */

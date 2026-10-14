@@ -10,14 +10,18 @@ import type { ObstacleType } from './ObstacleManager';
  * reaction time — stays the same as the world speeds up. Fairness rules for new patterns:
  *   - obstacles that must be jumped are ≥ 1.3 s apart (jump air time ≈ 0.8 s + reaction);
  *   - after a crate (which may be dashed through, skipping ahead) leave ≥ 1.5 s;
- *   - food is always optional and never placed inside an obstacle.
+ *   - food is always optional and never placed inside an obstacle;
+ *   - food can only rest on crates (`lid`): smashing the crate collects it. Logs and rocks are too low
+ *     for a jump to reach food resting on them, so use `crown` (food right above, at jump height).
  */
 export interface Entry {
   t: number;
   obstacle?: ObstacleType;
   food?: FoodKind;
-  /** Food height: the duck's centre above its swimming position (0 = on the water). */
+  /** Food along a jump: the duck's centre above its swimming position. Omitted = floating on the water. */
   h?: number;
+  /** Food resting on top of this obstacle type (spawned with it, at the same time). */
+  on?: ObstacleType;
 }
 
 interface Pattern {
@@ -57,9 +61,25 @@ const JUMP = (() => {
 
 const ob = (t: number, obstacle: ObstacleType): Entry => ({ t, obstacle });
 
-/** `n` food items on the water in a row. */
-function line(t0: number, n: number, kind: FoodKind, step = 0.12, h = 0): Entry[] {
-  return Array.from({ length: n }, (_, i) => ({ t: t0 + i * step, food: kind, h }));
+/** `n` food items floating on the water in a row. */
+function line(t0: number, n: number, kind: FoodKind, step = 0.12): Entry[] {
+  return Array.from({ length: n }, (_, i) => ({ t: t0 + i * step, food: kind }));
+}
+
+/** Food resting on top of the crate at time `t` (collected by smashing it). */
+function lid(t: number, ...kinds: FoodKind[]): Entry[] {
+  const step = kinds.length > 2 ? 0.075 : 0.09;
+  return kinds.map((kind, i) => ({ t: t + (i - (kinds.length - 1) / 2) * step, food: kind, on: 'crate' as const }));
+}
+
+/** A tight cluster right above the obstacle at time `tCenter`, where a well-timed jump passes. */
+function crown(tCenter: number, n: number, kind: FoodKind, apexKind?: FoodKind): Entry[] {
+  const T = JUMP.airtime;
+  return Array.from({ length: n }, (_, i) => {
+    const tau = T * (0.38 + (0.24 * i) / Math.max(1, n - 1));
+    const isApex = apexKind && i === Math.floor(n / 2);
+    return { t: tCenter - T / 2 + tau, food: isApex ? apexKind : kind, h: JUMP.heightAt(tau) };
+  });
 }
 
 /** `n` food items along a jump whose apex is at time `tCenter` (over an obstacle, or open water). */
@@ -87,26 +107,30 @@ const PATTERNS: Pattern[] = [
   // Tier 0 — single obstacles, big gaps, easy food.
   pattern('log', 0, 3, ob(0, 'log')),
   pattern('rock', 0, 2, ob(0, 'rock')),
-  pattern('crate', 0, 2, ob(0, 'crate')),
-  pattern('seed-line', 0, 2, line(0, 5, 'seed')),
-  pattern('log-arc', 0, 3, ob(0, 'log'), arc(0, 5, 'seed')),
+  pattern('crate', 0, 1, ob(0, 'crate')),
+  pattern('crate-lid', 0, 2, ob(0, 'crate'), lid(0, 'corn', 'corn')),
+  pattern('log-crown', 0, 2, ob(0, 'log'), crown(0, 3, 'corn')),
+  pattern('corn-line', 0, 2, line(0, 5, 'corn')),
+  pattern('log-arc', 0, 3, ob(0, 'log'), arc(0, 5, 'corn')),
   pattern('crate-peas', 0, 1, ob(0, 'crate'), line(0.55, 3, 'peas')),
 
   // Tier 1 — variety and some two-obstacle patterns.
-  pattern('rock-arc-corn', 1, 2, ob(0, 'rock'), arc(0, 5, 'seed', 'corn')),
+  pattern('rock-arc-bonus', 1, 2, ob(0, 'rock'), arc(0, 5, 'corn', 'bigCorn')),
   pattern('log-log', 1, 2, ob(0, 'log'), ob(1.4, 'log'), arc(1.4, 3, 'peas')),
-  pattern('crate-log', 1, 2, ob(0, 'crate'), ob(1.6, 'log')),
+  pattern('crate-log', 1, 2, ob(0, 'crate'), lid(0, 'corn', 'corn'), ob(1.6, 'log')),
+  pattern('crate-lid-bonus', 1, 1, ob(0, 'crate'), lid(0, 'bigCorn')),
+  pattern('rock-crown', 1, 1, ob(0, 'rock'), crown(0, 3, 'corn', 'bigCorn')),
   pattern('log-rock', 1, 2, ob(0, 'log'), ob(1.5, 'rock'), arc(1.5, 3, 'peas')),
-  pattern('rock-crate', 1, 1, ob(0, 'rock'), ob(1.45, 'crate'), line(1.95, 3, 'seed')),
-  pattern('open-arc', 1, 1, line(0, 3, 'seed'), arc(0.9, 6, 'peas', 'corn')),
+  pattern('rock-crate', 1, 1, ob(0, 'rock'), ob(1.45, 'crate'), line(1.95, 3, 'corn')),
+  pattern('open-arc', 1, 1, line(0, 3, 'corn'), arc(0.9, 6, 'peas', 'bigCorn')),
 
   // Tier 2 — faster, longer combinations, more reward.
-  pattern('log-crate-rock', 2, 2, ob(0, 'log'), ob(1.4, 'crate'), ob(2.95, 'rock'), arc(2.95, 5, 'seed', 'corn')),
-  pattern('rock-rock', 2, 2, ob(0, 'rock'), arc(0, 3, 'seed'), ob(1.35, 'rock'), arc(1.35, 3, 'seed')),
+  pattern('log-crate-rock', 2, 2, ob(0, 'log'), ob(1.4, 'crate'), ob(2.95, 'rock'), arc(2.95, 5, 'corn', 'bigCorn')),
+  pattern('rock-rock', 2, 2, ob(0, 'rock'), arc(0, 3, 'corn'), ob(1.35, 'rock'), arc(1.35, 3, 'corn')),
   pattern('triple-log', 2, 1, ob(0, 'log'), ob(1.3, 'log'), ob(2.6, 'log'), arc(1.3, 5, 'peas')),
   // Two quick crates: dash through both (cooldown 0.7 s) — or jump them with good timing.
-  pattern('crate-crate', 2, 1, ob(0, 'crate'), ob(1.05, 'crate'), line(1.55, 4, 'seed')),
-  pattern('corn-run', 2, 1, ob(0, 'log'), arc(0, 5, 'corn'), ob(1.5, 'rock')),
+  pattern('crate-crate', 2, 1, ob(0, 'crate'), lid(0, 'corn'), ob(1.05, 'crate'), lid(1.05, 'corn'), line(1.55, 4, 'corn')),
+  pattern('big-corn-run', 2, 1, ob(0, 'log'), arc(0, 5, 'bigCorn'), ob(1.5, 'rock')),
 ];
 
 // ------------------------------------------------------------------ spawner

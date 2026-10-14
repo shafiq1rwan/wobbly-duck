@@ -5,13 +5,14 @@ then the doc that matches your task:
 
 - UI, HUD, menus → [docs/UI_SPEC.md](docs/UI_SPEC.md) (reference: [docs/reference/ui-reference.png](docs/reference/ui-reference.png))
 - Art and audio assets → [docs/ASSET_SPEC.md](docs/ASSET_SPEC.md)
+- The twist (Duckling Parade) → [docs/DUCKLING_PARADE.md](docs/DUCKLING_PARADE.md)
 
 ## The game
 
 A 2D side-scrolling endless runner for desktop and mobile browsers, aimed at Poki. A chubby
 yellow duck floats on an endless river; the world scrolls right-to-left. The player jumps
 (Space / W / ↑, swipe up) and dashes (D / →, swipe right) to avoid logs, rocks and crates and
-to collect food (seeds, peas, corn). Sessions are short and restarting is instant.
+to collect food (corn kernels, peas, and rare big corn). Sessions are short and restarting is instant.
 
 Design pillars — check every change against these:
 
@@ -75,7 +76,8 @@ docs/                    Specs and reference images (not shipped)
   and don't invent SDK method names — use the official Poki documentation when integrating.
 - **Patterns are timed in seconds of travel** (`src/game/Patterns.ts`), so fairness holds at any
   speed. Obstacles that must be jumped stay ≥ 1.3 s apart; leave ≥ 1.5 s after a crate. Food arcs
-  use the simulated jump, so they always match the real trajectory.
+  use the simulated jump, so they always match the real trajectory. Food can rest only on crates
+  (`lid`, collected by smashing); above logs/rocks use `crown` at jump height.
 - **Pool, don't allocate**, in per-frame code (obstacles, particles, effects).
 - Keep it simple: no new frameworks, state libraries or abstractions without a clear need.
 

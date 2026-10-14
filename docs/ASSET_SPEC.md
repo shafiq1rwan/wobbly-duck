@@ -57,6 +57,11 @@ baseline (the bottom of the art), then update its crop rows in `CONFIG.backgroun
 | `log.png` (optional) | 256×96 | Replaces the procedural log. Log body 124×36 units (248×72 px) centred; cut end with rings on the right. The hit box stays 104×24 units. |
 | `star.png` | 96×96 | Five-point star, chubby rounded points, yellow with navy outline, ~40 units. Pivot at the centre. Also used as the HUD icon. Optional `star-sheet.png` (384×96, 4-frame spin). |
 
+### Needed for Duckling Parade (next)
+
+Duckling strip (swim ×4, jump ×2, hurt ×2), a "lost" pose and a HUD icon, in
+`assets-src/ducklings-v1/`. Full brief: [DUCKLING_PARADE.md](DUCKLING_PARADE.md#art-needed-codex).
+
 ### Needed for UI (Phase 4)
 
 | File | Canvas | Content |

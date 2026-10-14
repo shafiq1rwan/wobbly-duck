@@ -4,7 +4,7 @@ import type { Water } from './Water';
 
 const S = CONFIG.splash;
 
-type Kind = 'drop' | 'line' | 'spark' | 'chunk';
+type Kind = 'drop' | 'line' | 'spark' | 'chunk' | 'ring';
 
 interface Particle {
   active: boolean;
@@ -76,6 +76,18 @@ export class Splashes {
     }
   }
 
+  /** A small expanding ring, from the same pool as pickup sparkles. */
+  pickupRing(x: number, y: number, color: number, bonus: boolean): void {
+    const p = this.take();
+    p.kind = 'ring';
+    p.x = x;
+    p.y = y;
+    p.vx = p.vy = 0;
+    p.maxLife = p.life = CONFIG.food.pickup.ringDuration;
+    p.size = bonus ? CONFIG.food.pickup.bonusRingEndRadius : CONFIG.food.pickup.ringEndRadius;
+    p.color = color;
+  }
+
   /** Wood pieces flying out of a smashed crate. */
   chunks(x: number, y: number, count: number, colors: readonly number[]): void {
     for (let i = 0; i < count; i++) {
@@ -145,6 +157,11 @@ export class Splashes {
         g.fillStyle(p.color, fade);
         g.fillRect(p.x - r, p.y - r * 0.28, r * 2, r * 0.56);
         g.fillRect(p.x - r * 0.28, p.y - r, r * 0.56, r * 2);
+      } else if (p.kind === 'ring') {
+        const t = 1 - p.life / p.maxLife;
+        const radius = CONFIG.food.pickup.ringStartRadius + (p.size - CONFIG.food.pickup.ringStartRadius) * t;
+        g.lineStyle(CONFIG.food.pickup.ringWidth, p.color, (1 - t) * 0.65);
+        g.strokeCircle(p.x, p.y, radius);
       } else if (p.kind === 'chunk') {
         g.fillStyle(0x6e4524, fade);
         g.fillRoundedRect(p.x - p.size / 2 - 1.5, p.y - p.size * 0.3 - 1.5, p.size + 3, p.size * 0.6 + 3, 2.5);

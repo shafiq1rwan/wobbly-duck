@@ -26,9 +26,9 @@ const DEBUG = new URLSearchParams(window.location.search).has('debug');
 const RESTART_LOCKOUT = 0.35;
 /** Sparkle colours per food. */
 const FOOD_SPARKLE: Record<FoodKind, number[]> = {
-  seed: [0xffffff, 0xffe9a8, 0xd9a066],
+  corn: [0xffffff, 0xffe45c, 0xffcf3a],
   peas: [0xffffff, 0xc9f28d, 0x7ccf4f],
-  corn: [0xffffff, 0xffe45c, 0xffb52e],
+  bigCorn: [0xffffff, 0xffe45c, 0xffb52e],
 };
 const CRATE_CHUNKS = [0xf3b65a, 0xe09a3e, 0xc77e36];
 
@@ -141,6 +141,7 @@ export class GameScene extends Phaser.Scene {
   private toMenu(): void {
     this.clearRiver();
     this.ui.setMenuBest(this.best);
+    this.ui.setMenuBank(this.foodTotal);
     this.ui.setHintVisible(this.runs === 0);
     this.speed = CONFIG.world.menuSpeed;
     this.setState('menu');
@@ -161,7 +162,6 @@ export class GameScene extends Phaser.Scene {
     this.foodCount = 0;
     this.controls.clear();
     this.ui.setDistance(0);
-    this.ui.setFood(0, false);
     saveNumber('runs', ++this.runs);
     this.setState('playing');
     platform.gameplayStarted();
@@ -219,6 +219,7 @@ export class GameScene extends Phaser.Scene {
     saveNumber('foodTotal', this.foodTotal);
     this.ui.setGameOver(metres, this.best, isNewBest, this.foodCount);
     this.ui.setMenuBest(this.best);
+    this.ui.setMenuBank(this.foodTotal);
     this.setState('gameover');
     platform.gameplayStopped();
   }
@@ -314,27 +315,43 @@ export class GameScene extends Phaser.Scene {
       else this.crash();
     }
     const points = this.food.collect(this.duck.collider, this.onPickup);
-    if (points > 0) {
-      this.foodCount += points;
-      this.ui.setFood(this.foodCount, true);
-    }
+    this.foodCount += points;
   }
 
   /** Places a pattern entry just beyond the right edge (minus how far it is overdue). */
   private readonly spawnEntry = (entry: Entry, overdue: number): void => {
     const x = this.view.right + CONFIG.obstacles.spawnMargin - overdue;
-    if (entry.obstacle) this.obstacles.spawn(entry.obstacle, x, this.water);
-    else if (entry.food) this.food.spawn(entry.food, x, entry.h ?? 0, this.water);
+    if (entry.obstacle) {
+      this.obstacles.spawn(entry.obstacle, x, this.water);
+    } else if (entry.food) {
+      const F = CONFIG.food;
+      if (entry.on) {
+        // Resting on the obstacle: just above its top (heights are relative to the duck's swim position).
+        const t = CONFIG.obstacles.types[entry.on];
+        const halfFood = 33 * F.kinds[entry.food].scale;
+        const h = t.top + F.onTopGap + halfFood - CONFIG.duck.floatOffset;
+        this.food.spawn(entry.food, x, h, t.waveFollow, true, this.water);
+      } else if (entry.h !== undefined) {
+        this.food.spawn(entry.food, x, entry.h, 0, false, this.water); // along a jump arc
+      } else {
+        this.food.spawn(entry.food, x, F.lowHeight, 1, false, this.water); // floating on the water
+      }
+    }
   };
 
   private readonly onPickup = (x: number, y: number, kind: FoodKind): void => {
-    this.splashes.sparkle(x, y, kind === 'corn' ? 12 : 7, FOOD_SPARKLE[kind]);
-    this.audio.play(kind === 'corn' ? 'bonus' : 'pickup');
+    const bonus = kind === 'bigCorn';
+    const effect = CONFIG.food.pickup;
+    this.splashes.sparkle(x, y, bonus ? effect.bonusSparkCount : effect.sparkCount, FOOD_SPARKLE[kind]);
+    this.splashes.pickupRing(x, y, FOOD_SPARKLE[kind][1], bonus);
+    this.audio.play(bonus ? 'bonus' : 'pickup');
   };
 
-  /** Dash through a crate: it bursts into wood pieces. */
+  /** Dash through a crate: it bursts into wood pieces, and any food on its lid is collected. */
   private smash(o: Obstacle): void {
     const { x, y } = o;
+    const lidPoints = this.food.collectOnTop(x, o.box.halfW, this.onPickup);
+    this.foodCount += lidPoints;
     this.obstacles.smash(o);
     this.splashes.chunks(x, y, 12, CRATE_CHUNKS);
     this.splashes.burst(x, this.water.heightAt(x), 6, 160, 320, -2.4, -0.7, 3, 5);

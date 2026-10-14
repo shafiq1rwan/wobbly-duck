@@ -35,8 +35,6 @@ export class UI {
     gameover: $('gameover'),
   };
   private readonly distanceEl = $('hud-distance');
-  private readonly foodEl = $('hud-food');
-  private readonly foodChip = $('chip-food');
   private lastDistance = -1;
 
   constructor(handlers: UIHandlers) {
@@ -114,18 +112,14 @@ export class UI {
     this.distanceEl.textContent = fmt(metres);
   }
 
-  /** Food counter; `pop` plays the little bounce on pickup. */
-  setFood(count: number, pop: boolean): void {
-    this.foodEl.textContent = fmt(count);
-    if (!pop) return;
-    this.foodChip.classList.remove('pop');
-    void this.foodChip.offsetWidth; // restart the animation
-    this.foodChip.classList.add('pop');
+  /** Corn collected across all runs (the currency for unlocking skins). */
+  setMenuBank(total: number): void {
+    $('menu-bank').textContent = fmt(total);
   }
 
   setGameOver(distance: number, best: number, isNewBest: boolean, food: number): void {
     $('go-distance').textContent = fmt(distance);
-    $('go-food').textContent = fmt(food);
+    $('go-food').textContent = `+${fmt(food)}`;
     $('go-best').textContent = fmt(best);
     $('go-best-label').textContent = isNewBest ? 'New Best!' : 'Best Distance';
     $('go-best-badge').classList.toggle('is-new', isNewBest);

@@ -404,6 +404,25 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Corn bank on the main menu (lifetime corn — the currency for unlocking skins). */
+.bank {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px 4px 8px;
+  font-size: clamp(16px, 4.4vmin, 22px);
+  font-weight: 700;
+  color: var(--white);
+  background: var(--chip);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bank-icon {
+  width: 1.4em;
+  height: 1.4em;
+}
+
 /* New best: orange label and a little crown bounce. */
 .best-badge.is-new .best-label {
   color: var(--accent);
@@ -521,12 +540,6 @@ button {
   background: var(--chip);
   border-radius: 10px;
   font-variant-numeric: tabular-nums;
-}
-
-.chip-icon {
-  width: calc(var(--hud-h) * 0.72);
-  height: calc(var(--hud-h) * 0.72);
-  margin-left: -4px;
 }
 
 .chip.pop {

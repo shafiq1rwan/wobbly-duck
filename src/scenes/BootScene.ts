@@ -11,9 +11,13 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     loadDuckSheet(this);
     const base = `${import.meta.env.BASE_URL}assets/`;
-    for (const layer of CONFIG.background.layers) this.load.image(layer.key, base + layer.file);
-    for (const o of Object.values(CONFIG.obstacles.types)) this.load.image(o.key, base + o.file);
-    for (const f of Object.values(CONFIG.food.kinds)) this.load.image(f.key, base + f.file);
+    const images = [...CONFIG.background.layers, ...Object.values(CONFIG.obstacles.types), ...Object.values(CONFIG.food.kinds)];
+    const seen = new Set<string>(); // several kinds may share one texture (e.g. corn / big corn)
+    for (const { key, file } of images) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      this.load.image(key, base + file);
+    }
   }
 
   create(): void {

@@ -89,7 +89,7 @@ splash droplets either side. It is an image asset (`logo.png`), not CSS text.
 
 | Element | Position | Content |
 | --- | --- | --- |
-| Food chip | Top-left | Seed image + collected food points (`24`) |
+| ~~Food chip~~ | — | Removed: corn is a currency, shown on the main menu (corn bank) and on Game Over (`Corn +45`) |
 | Distance chip | Top-left, below the star chip (gap 6) | `512 m` |
 | Pause button | Top-right | Pause bars |
 
@@ -110,7 +110,7 @@ hidden during play, the game auto-pauses (already implemented).
 | --- | --- | --- |
 | Dim overlay | Full screen `--overlay` with blur | Same |
 | Title | "Game Over", 64 px white, navy stroke 6 px, centred near the top | 44 px |
-| Stats card | `--card`, radius 14, ~330×84, rows `Distance … 742 m` (flag icon) and `Food … 28` (seed image) (labels left, 22 px weight 500; values right, 24 px weight 700; `--ink`) | Full width minus 48 px |
+| Stats card | `--card`, radius 14, ~330×84, rows `Distance … 742 m` (flag icon) and `Food … 28` (corn-kernel image) (labels left, 22 px weight 500; values right, 24 px weight 700; `--ink`) | Full width minus 48 px |
 | Best Distance badge | Centred under the card | Same |
 | New best | Not in the reference. Show a small "New best!" ribbon on the badge with a sparkle when beaten | Same |
 | Buttons | Row: Home (84×56 secondary) + Play Again (200×56 primary), centred | Same, Play Again flexes wider |
@@ -141,7 +141,7 @@ Enter = Play Again (after a 0.35 s lockout, already implemented). Home returns t
 | Play button | Yellow pill with ▶ | Done | — |
 | Best Distance badge | Crown + label + value | Done (SVG crown) | — |
 | Sound toggle | Top-right navy circle | Done — menu and pause screens; saved as `muted` | — |
-| Food chip / Food row | (stars in the mockup) | Done — food replaces stars; seed image icon | — |
+| Corn (stars in the mockup) | Star chip + Stars row | No HUD chip; Game Over `Corn +N`; menu corn bank pill under Best Distance | — |
 | Distance chip | Navy translucent chip | Done | — |
 | Pause button | Navy rounded square | Done | — |
 | Pause screen | (derived) | Done — Home + Resume | — |
