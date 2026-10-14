@@ -1,0 +1,16 @@
+{
+  "file": "seagull-flight-sheet.png",
+  "width": 1536,
+  "height": 256,
+  "frameWidth": 256,
+  "frameHeight": 256,
+  "frames": 6,
+  "frameRate": 10,
+  "repeat": -1,
+  "eyeAnchor": [
+    62,
+    145
+  ],
+  "facing": "left",
+  "scale": 0.46
+}
