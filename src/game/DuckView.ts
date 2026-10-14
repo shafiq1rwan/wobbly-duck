@@ -30,6 +30,10 @@ export class DuckView {
   /** Remaining time of the double-jump somersault (s). */
   private flipTime = 0;
   private readonly baseTint: number;
+  /** Texture of the current skin (see skinTexture). */
+  private texture: string = DUCK_SHEET.key;
+  /** Remaining time of the after-revive blink (s). */
+  private blinkTime = 0;
 
   /** `size` scales the whole duck (ducklings); `tint` colours it (placeholder duckling art). */
   constructor(scene: Phaser.Scene, depth: number, size = 1, tint = 0xffffff) {
@@ -49,11 +53,27 @@ export class DuckView {
     this.root.setVisible(visible);
   }
 
+  /** Switches to another skin's sheet (already loaded, with its animations created). */
+  setSkin(texture: string): void {
+    if (texture === this.texture) return;
+    this.texture = texture;
+    const anim = this.current ?? 'swim';
+    this.current = null;
+    this.play(anim);
+  }
+
+  /** Flickers for `seconds` (invulnerable after a revive). */
+  blink(seconds: number): void {
+    this.blinkTime = seconds;
+  }
+
   reset(): void {
     this.hurtTime = -1;
     this.shakeTime = 0;
     this.flipTime = 0;
     this.landTimer = 0;
+    this.blinkTime = 0;
+    this.root.setAlpha(1);
     this.stretch.reset();
     this.tilt.reset();
     this.body.setTint(this.baseTint);
@@ -147,6 +167,11 @@ export class DuckView {
     this.landTimer = Math.max(0, this.landTimer - dt);
     this.play(this.pickAnim(duck));
 
+    if (this.blinkTime > 0) {
+      this.blinkTime = Math.max(0, this.blinkTime - dt);
+      this.root.setAlpha(this.blinkTime > 0 && Math.floor(this.blinkTime * 12) % 2 === 0 ? 0.35 : 1);
+    }
+
     if (this.hurtTime >= 0) {
       this.hurtTime += dt;
       const on = this.hurtTime < 0.5 && Math.floor(this.hurtTime * 16) % 2 === 0;
@@ -165,6 +190,6 @@ export class DuckView {
   private play(anim: DuckAnim): void {
     if (anim === this.current) return;
     this.current = anim;
-    this.body.play(animKey(anim));
+    this.body.play(animKey(anim, this.texture));
   }
 }

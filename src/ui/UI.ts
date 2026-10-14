@@ -1,7 +1,23 @@
-export type Screen = 'menu' | 'playing' | 'paused' | 'gameover';
+export type Screen = 'menu' | 'shop' | 'playing' | 'paused' | 'revive' | 'gameover';
+
+/** What the skins shop shows; GameScene owns the logic (prices, bank, ownership). */
+export interface ShopView {
+  bank: number;
+  items: readonly { id: string; name: string; file: string; price: number; owned: boolean }[];
+  equipped: string;
+  selected: string;
+}
 
 export interface UIHandlers {
   onPlay(): void;
+  onShop(): void;
+  onShopBack(): void;
+  /** A skin card was tapped (owned: wear it; locked: try it on). */
+  onShopPick(id: string): void;
+  /** The shop's main button: Play, or Unlock for a locked skin. */
+  onShopAction(): void;
+  onRevive(): void;
+  onReviveSkip(): void;
   onPause(): void;
   onResume(): void;
   onRestart(): void;
@@ -37,9 +53,13 @@ export class UI {
   private readonly screens: Record<string, HTMLElement> = {
     hud: $('hud'),
     menu: $('menu'),
+    shop: $('shop'),
     pause: $('pause'),
+    revive: $('revive'),
     gameover: $('gameover'),
   };
+  private readonly shopGrid = $('shop-grid');
+  private readonly shopCards = new Map<string, HTMLElement>();
   private readonly distanceEl = $('hud-distance');
   private readonly scoreEl = $('hud-score');
   private readonly paradeChip = $('chip-parade');
@@ -49,7 +69,7 @@ export class UI {
   private toastTimer = 0;
   private paradeCount = 0;
 
-  constructor(handlers: UIHandlers) {
+  constructor(private readonly handlers: UIHandlers) {
     const bind = (id: string, fn: () => void) => {
       const el = $(id);
       let pending = false;
@@ -95,6 +115,11 @@ export class UI {
     bind('btn-home-pause', handlers.onHome);
     bind('btn-sound-menu', handlers.onToggleSound);
     bind('btn-sound-pause', handlers.onToggleSound);
+    bind('btn-shop', handlers.onShop);
+    bind('btn-shop-back', handlers.onShopBack);
+    bind('btn-shop-action', handlers.onShopAction);
+    bind('btn-revive', handlers.onRevive);
+    bind('btn-revive-skip', handlers.onReviveSkip);
   }
 
   setMuted(muted: boolean): void {
@@ -108,9 +133,94 @@ export class UI {
   show(screen: Screen): void {
     const s = this.screens;
     s.menu.hidden = screen !== 'menu';
+    s.shop.hidden = screen !== 'shop';
     s.hud.hidden = screen !== 'playing' && screen !== 'paused';
     s.pause.hidden = screen !== 'paused';
+    s.revive.hidden = screen !== 'revive';
     s.gameover.hidden = screen !== 'gameover';
+  }
+
+  /** Orange dot on the menu's shop button when a new skin is affordable. */
+  setShopDot(visible: boolean): void {
+    $('shop-dot').hidden = !visible;
+  }
+
+  setShop(v: ShopView): void {
+    $('shop-bank').textContent = fmt(v.bank);
+    if (this.shopCards.size !== v.items.length) this.buildShop(v);
+    for (const item of v.items) {
+      const card = this.shopCards.get(item.id)!;
+      const equipped = item.id === v.equipped;
+      card.classList.toggle('selected', item.id === v.selected);
+      card.classList.toggle('locked', !item.owned);
+      card.classList.toggle('equipped', equipped);
+      const price = card.querySelector('.skin-price')!;
+      price.innerHTML = equipped
+        ? '<svg class="icon"><use href="#i-check" /></svg>Wearing'
+        : item.owned
+          ? 'Owned'
+          : `<svg class="icon"><use href="#i-star" /></svg>${fmt(item.price)}`;
+    }
+    const sel = v.items.find((i) => i.id === v.selected) ?? v.items[0];
+    const action = $('btn-shop-action');
+    const affordable = sel.price <= v.bank;
+    const [icon, text] = sel.owned
+      ? ['#i-play', 'Play']
+      : affordable
+        ? ['#i-star', `Unlock ${fmt(sel.price)}`]
+        : ['#i-lock', `Need ${fmt(sel.price - v.bank)} more`];
+    $('shop-action-icon').setAttribute('href', icon);
+    $('shop-action-text').textContent = text;
+    action.classList.toggle('btn-locked', !sel.owned && !affordable);
+    action.setAttribute('aria-label', text);
+  }
+
+  /** Can't afford the selected skin: shake the button. */
+  shopDenied(): void {
+    restartAnimation($('btn-shop-action'), 'shake');
+  }
+
+  private buildShop(v: ShopView): void {
+    this.shopGrid.replaceChildren();
+    this.shopCards.clear();
+    const base = `${import.meta.env.BASE_URL}assets/`;
+    for (const item of v.items) {
+      const card = document.createElement('button');
+      card.className = 'skin-card';
+      card.setAttribute('aria-label', item.name);
+      card.innerHTML = `<span class="skin-img" style="background-image:url('${base}${item.file}')"></span><span class="skin-name"></span><span class="skin-price"></span>`;
+      card.querySelector('.skin-name')!.textContent = item.name;
+      card.addEventListener('pointerdown', (e) => {
+        e.stopPropagation(); // not a jump/dash tap
+        this.handlers.onButton();
+      });
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        card.blur();
+        this.handlers.onShopPick(item.id);
+      });
+      this.shopGrid.append(card);
+      this.shopCards.set(item.id, card);
+    }
+  }
+
+  // ------------------------------------------------------------------ revive
+
+  showRevive(score: number): void {
+    $('revive-score').textContent = fmt(score);
+    this.setReviveTimer(1);
+    this.setReviveBusy(false);
+  }
+
+  /** Time left on the offer, 1 → 0. */
+  setReviveTimer(fraction: number): void {
+    $('revive-bar').style.transform = `scaleX(${Math.max(0, fraction)})`;
+  }
+
+  /** While the ad is loading/playing the buttons do nothing. */
+  setReviveBusy(busy: boolean): void {
+    $('revive-text').textContent = busy ? 'Loading…' : 'Revive';
+    for (const id of ['btn-revive', 'btn-revive-skip']) ($(id) as HTMLButtonElement).disabled = busy;
   }
 
   setMenuBest(best: number): void {

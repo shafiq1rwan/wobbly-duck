@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
+import { createDuckAnims, loadDuckSheet, skinTexture, type SkinId } from '../art/duckSprite';
 import { CONFIG } from '../config';
 import { AudioManager } from '../core/Audio';
 import { InputManager } from '../core/InputManager';
 import { loadNumber, saveNumber } from '../core/Storage';
 import { frameCamera, type ViewBounds } from '../core/Viewport';
 import { Background } from '../game/Background';
+import { BestMarker } from '../game/BestMarker';
 import { CameraShake } from '../game/CameraShake';
 import { DashMeter } from '../game/DashMeter';
 import { Duck } from '../game/Duck';
@@ -15,15 +17,16 @@ import { ObstacleManager, type Obstacle } from '../game/ObstacleManager';
 import { Parade, type ParadeEvents } from '../game/Parade';
 import { Spawner, type Entry, type FoodRole } from '../game/Patterns';
 import { ScorePopups } from '../game/ScorePopups';
+import { isSkin, Skins } from '../game/Skins';
 import { Splashes } from '../game/Splashes';
 import { Water } from '../game/Water';
 import { platform } from '../platform/Platform';
 import { UI } from '../ui/UI';
 
-type State = 'menu' | 'playing' | 'paused' | 'crashed' | 'gameover';
+type State = 'menu' | 'playing' | 'paused' | 'crashed' | 'revive' | 'gameover';
 
 /** Background uses 0–4 (sky + parallax layers); the ocean body sits behind obstacles, the water tint in front. */
-const DEPTH = { background: 0, waterBack: 5, pads: 9, obstacles: 10, frogs: 11, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, debug: 100 };
+const DEPTH = { background: 0, waterBack: 5, marker: 7, pads: 9, obstacles: 10, frogs: 11, food: 12, ducklings: 19, duck: 20, water: 30, splashes: 35, meter: 36, popups: 37, debug: 100 };
 const DEBUG = new URLSearchParams(window.location.search).has('debug');
 /** Ignore restart input for a moment after the game-over screen appears (prevents mash-restarts). */
 const RESTART_LOCKOUT = 0.35;
@@ -56,6 +59,16 @@ export class GameScene extends Phaser.Scene {
   private parade!: Parade;
   private pads!: LilyPads;
   private popups!: ScorePopups;
+  private marker!: BestMarker;
+  private readonly skins = new Skins();
+  /** Shop: open on the menu; the skin selected (worn, or tried on); the skin last asked to show. */
+  private shopOpen = false;
+  private shopSkin: SkinId = 'classic';
+  private wantedSkin: SkinId = 'classic';
+  /** Revive: already used this run; the ad is playing; invulnerable time left after reviving. */
+  private revived = false;
+  private adPlaying = false;
+  private graceTime = 0;
   private dashMeter!: DashMeter;
   private readonly shake = new CameraShake();
   private audio!: AudioManager;
@@ -103,6 +116,7 @@ export class GameScene extends Phaser.Scene {
     this.parade = new Parade(this, DEPTH.ducklings, this.paradeEvents);
     this.pads = new LilyPads(this, DEPTH.pads, DEPTH.frogs, this.padEvents);
     this.popups = new ScorePopups(this, DEPTH.popups);
+    this.marker = new BestMarker(this, DEPTH.marker, this.onBestPassed);
     this.dashMeter = new DashMeter(this, DEPTH.meter);
     this.audio = new AudioManager(loadNumber('muted') === 1);
     this.duck = new Duck(0);
@@ -114,6 +128,12 @@ export class GameScene extends Phaser.Scene {
     this.controls = new InputManager(this.game.canvas);
     this.ui = new UI({
       onPlay: () => this.startRun(),
+      onShop: () => this.openShop(),
+      onShopBack: () => this.closeShop(),
+      onShopPick: (id) => this.pickSkin(id),
+      onShopAction: () => this.shopAction(),
+      onRevive: () => this.watchReviveAd(),
+      onReviveSkip: () => this.skipRevive(),
       onPause: () => this.pause(),
       onResume: () => this.resume(),
       onRestart: () => this.startRun(),
@@ -138,6 +158,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.duck.reset(this.water);
+    this.showSkin(this.skins.equipped);
     this.toMenu();
     platform.loadingFinished();
   }
@@ -145,13 +166,14 @@ export class GameScene extends Phaser.Scene {
   // ------------------------------------------------------------------ state changes
 
   private setState(state: State): void {
-    // Paused and game over freeze the whole scene (world, water, sprite animation).
-    this.duckView.setFrozen(state === 'paused' || state === 'gameover');
-    this.parade.setFrozen(state === 'paused' || state === 'gameover');
-    this.pads.setFrozen(state === 'paused' || state === 'gameover');
+    // Paused, the revive offer and game over freeze the whole scene (world, water, sprite animation).
+    const frozen = state === 'paused' || state === 'revive' || state === 'gameover';
+    this.duckView.setFrozen(frozen);
+    this.parade.setFrozen(frozen);
+    this.pads.setFrozen(frozen);
     this.state = state;
     this.stateTime = 0;
-    this.ui.show(state === 'crashed' ? 'playing' : state);
+    this.ui.show(state === 'crashed' ? 'playing' : state === 'menu' && this.shopOpen ? 'shop' : state);
   }
 
   /** Removes everything from the river and stops spawning. */
@@ -169,12 +191,15 @@ export class GameScene extends Phaser.Scene {
     this.clearRiver();
     this.ui.setMenuBest(this.bestScore);
     this.ui.setMenuBank(this.scoreBank);
+    this.ui.setShopDot(this.skins.canAffordNew(this.scoreBank));
     this.ui.setHintVisible(this.runs === 0);
+    this.marker.hide();
     this.speed = CONFIG.world.menuSpeed;
     this.setState('menu');
   }
 
   private startRun(): void {
+    if (this.shopOpen) this.closeShop();
     if (this.state !== 'menu') {
       // Restart: fresh duck and clear the river.
       this.duck.reset(this.water);
@@ -187,6 +212,9 @@ export class GameScene extends Phaser.Scene {
     if (this.runs < 3) this.spawner.reset(this.worldDistance, [null, 'lily-bounce', null, 'sky-arc']);
     this.spawner.active = true;
     this.runStart = this.worldDistance;
+    this.marker.start(this.runStart, this.best);
+    this.revived = false;
+    this.graceTime = 0;
     this.speed = this.baseSpeed();
     this.score = 0;
     this.maxParade = 0;
@@ -245,6 +273,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showGameOver(): void {
+    const stillPlaying = this.state !== 'revive'; // the revive offer already stopped gameplay
     const metres = this.runMetres();
     if (metres > this.best) {
       this.best = metres;
@@ -265,7 +294,140 @@ export class GameScene extends Phaser.Scene {
     this.ui.setMenuBest(this.bestScore);
     this.ui.setMenuBank(this.scoreBank);
     this.setState('gameover');
+    if (stillPlaying) platform.gameplayStopped();
+  }
+
+  // ------------------------------------------------------------------ revive (one rewarded ad per run)
+
+  private canRevive(): boolean {
+    return !this.revived && this.runMetres() >= CONFIG.revive.minMetres;
+  }
+
+  private offerRevive(): void {
+    this.ui.showRevive(this.score);
+    this.setState('revive');
     platform.gameplayStopped();
+  }
+
+  private watchReviveAd(): void {
+    if (this.state !== 'revive' || this.adPlaying) return;
+    this.adPlaying = true;
+    this.ui.setReviveBusy(true);
+    this.audio.setAdPlaying(true);
+    void platform.rewardedBreak().then((rewarded) => {
+      this.adPlaying = false;
+      this.audio.setAdPlaying(false);
+      if (this.state !== 'revive') return;
+      if (rewarded) this.revive();
+      else this.showGameOver();
+    });
+  }
+
+  private skipRevive(): void {
+    if (this.state === 'revive' && !this.adPlaying) this.showGameOver();
+  }
+
+  /** Back in the water where the duck crashed: river ahead cleared, a moment of invulnerability. */
+  private revive(): void {
+    const R = CONFIG.revive;
+    this.revived = true;
+    this.duck.reset(this.water);
+    this.duckView.reset();
+    this.duckView.blink(R.graceSeconds);
+    this.graceTime = R.graceSeconds;
+    this.lastJumpCount = this.duck.jumpCount;
+    this.dashMeter.reset();
+    this.obstacles.clearBefore(this.duck.x + R.clearAhead, (x, y) => {
+      this.splashes.sparkle(x, y, 10, [0xffffff, 0xeaf8ff, 0xd6f1ff]);
+      this.water.disturb(x, 80, 40);
+    });
+    this.spawner.reset(this.worldDistance);
+    this.spawner.active = true;
+    this.speed = this.baseSpeed();
+    this.controls.clear();
+    this.setState('playing');
+    this.water.disturb(this.duck.x, 160, 60);
+    this.splashes.sparkle(this.duck.x, this.duck.y, 14, [0xffffff, 0xfff3b0, 0xffe45c]);
+    this.audio.play('revive');
+    platform.gameplayStarted();
+  }
+
+  // ------------------------------------------------------------------ skins shop
+
+  private openShop(): void {
+    if (this.state !== 'menu' || this.shopOpen) return;
+    this.shopOpen = true;
+    this.shopSkin = this.skins.equipped;
+    this.refreshShop();
+    this.setState('menu');
+  }
+
+  private closeShop(): void {
+    if (!this.shopOpen) return;
+    this.shopOpen = false;
+    this.showSkin(this.skins.equipped); // drop any try-on
+    this.ui.setMenuBank(this.scoreBank);
+    this.ui.setShopDot(this.skins.canAffordNew(this.scoreBank));
+    this.setState('menu');
+  }
+
+  /** Owned: wear it. Locked: try it on (the main button then offers to unlock it). */
+  private pickSkin(id: string): void {
+    if (!this.shopOpen || !isSkin(id)) return;
+    this.shopSkin = id;
+    if (this.skins.isOwned(id)) this.skins.equip(id);
+    this.showSkin(id);
+    this.refreshShop();
+  }
+
+  private shopAction(): void {
+    if (!this.shopOpen) return;
+    const id = this.shopSkin;
+    if (this.skins.isOwned(id)) {
+      this.startRun();
+      return;
+    }
+    const price = this.skins.info(id).price;
+    if (price > this.scoreBank) {
+      this.ui.shopDenied();
+      return;
+    }
+    this.scoreBank -= price;
+    saveNumber('scoreBank', this.scoreBank);
+    this.skins.unlock(id);
+    this.skins.equip(id);
+    this.audio.play('unlock');
+    this.duckView.onBounce();
+    this.splashes.sparkle(this.duck.x, this.duck.y - 20, 18, [0xffffff, 0xffe45c, 0xff994a]);
+    this.refreshShop();
+  }
+
+  private refreshShop(): void {
+    this.ui.setShop({
+      bank: this.scoreBank,
+      items: this.skins.list.map((s) => ({ id: s.id, name: s.name, file: s.file, price: s.price, owned: this.skins.isOwned(s.id) })),
+      equipped: this.skins.equipped,
+      selected: this.shopSkin,
+    });
+  }
+
+  /** Dresses the duck and ducklings in a skin, loading its sheet first if needed. */
+  private showSkin(id: SkinId): void {
+    this.wantedSkin = id;
+    const texture = skinTexture(id);
+    const apply = () => {
+      if (this.wantedSkin !== id) return; // another skin was picked while this one loaded
+      createDuckAnims(this, texture);
+      this.duckView.setSkin(texture);
+      this.parade.setSkin(texture);
+    };
+    if (this.textures.exists(texture)) {
+      apply();
+      return;
+    }
+    loadDuckSheet(this, id);
+    this.load.once(`filecomplete-spritesheet-${texture}`, apply);
+    this.load.start();
   }
 
   private runMetres(): number {
@@ -284,7 +446,15 @@ export class GameScene extends Phaser.Scene {
     for (const action of this.controls.consume()) {
       switch (this.state) {
         case 'menu':
-          if (action === 'confirm' || action === 'jump' || action === 'dash') this.startRun(); // any tap starts
+          if (this.shopOpen) {
+            if (action === 'pause') this.closeShop();
+          } else if (action === 'confirm' || action === 'jump' || action === 'dash') {
+            this.startRun(); // any tap starts
+          }
+          break;
+        case 'revive':
+          if (action === 'confirm') this.watchReviveAd();
+          else if (action === 'pause') this.skipRevive();
           break;
         case 'playing':
           if (action === 'jump') this.duck.requestJump();
@@ -307,6 +477,10 @@ export class GameScene extends Phaser.Scene {
     this.handleInput();
     const dt = Math.min(deltaMs / 1000, CONFIG.maxFrameTime);
     if (this.state === 'paused') return;
+    if (this.state === 'revive') {
+      this.updateReviveOffer(dt);
+      return;
+    }
     this.stateTime += dt;
     if (this.state === 'gameover') return; // frozen behind the panel; stateTime still drives the restart lockout
 
@@ -315,6 +489,7 @@ export class GameScene extends Phaser.Scene {
     const h = dt / steps;
     this.frameDx = 0;
     for (let i = 0; i < steps; i++) this.step(h);
+    this.marker.update(dt, this.worldDistance, this.duck.anchorX, this.duck.x, this.water, this.view);
 
     this.duckEffects(dt);
     this.duckView.sync(this.duck, dt);
@@ -329,8 +504,20 @@ export class GameScene extends Phaser.Scene {
     this.applyShake(dt);
 
     if (this.state === 'playing' || this.state === 'crashed') this.ui.setDistance(this.runMetres());
-    if (this.state === 'crashed' && this.stateTime >= CONFIG.gameOverDelay) this.showGameOver();
+    if (this.state === 'crashed' && this.stateTime >= CONFIG.gameOverDelay) {
+      if (this.canRevive()) this.offerRevive();
+      else this.showGameOver();
+    }
     if (this.debugGfx) this.drawDebug(this.debugGfx);
+  }
+
+  /** The offer counts down (held while the ad plays), then becomes game over. */
+  private updateReviveOffer(dt: number): void {
+    if (this.adPlaying) return;
+    this.stateTime += dt;
+    const left = 1 - this.stateTime / CONFIG.revive.offerSeconds;
+    this.ui.setReviveTimer(left);
+    if (left <= 0) this.showGameOver();
   }
 
   private step(h: number): void {
@@ -366,10 +553,11 @@ export class GameScene extends Phaser.Scene {
     this.parade.update(h, dx, this.worldDistance, this.duck, this.water, this.obstacles, this.pads, this.view);
 
     if (this.state !== 'playing') return;
+    this.graceTime = Math.max(0, this.graceTime - h);
     const hit = this.obstacles.hitTest(this.duck.collider);
     if (hit) {
       if (CONFIG.obstacles.types[hit.type].breakable && this.duck.canSmash) this.smash(hit);
-      else this.crash();
+      else if (this.graceTime <= 0) this.crash(); // just revived: swim through
     }
     this.food.collect(this.duck.collider, this.onPickup);
   }
@@ -456,6 +644,14 @@ export class GameScene extends Phaser.Scene {
       this.splashes.burst(x, y, 6, 120, 260, -2.4, -0.7, 2.5, 4);
       this.audio.play('splashSmall');
     },
+  };
+
+  /** Swam past the best-distance flag. */
+  private readonly onBestPassed = (x: number, y: number): void => {
+    if (this.state !== 'playing') return;
+    this.ui.showToast('New best distance!', 2.5);
+    this.splashes.sparkle(x, y, 18, [0xffffff, 0xffe45c, 0xff994a]);
+    this.audio.play('fanfare');
   };
 
   /** Shows a first-time hint once per device. */

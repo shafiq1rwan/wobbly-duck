@@ -114,6 +114,11 @@ export class Parade {
     for (const d of this.all) if (d.state === 'following') this.leave(d);
   }
 
+  /** Ducklings wear the mother's skin. */
+  setSkin(texture: string): void {
+    for (const d of this.all) d.view.setSkin(texture);
+  }
+
   setFrozen(frozen: boolean): void {
     for (const d of this.all) if (d.state !== 'idle') d.view.setFrozen(frozen);
   }

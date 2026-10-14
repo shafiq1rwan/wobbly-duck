@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { CONFIG } from '../config';
 
 /**
  * Layout of public/assets/duck-sheet.webp (source assets-src/duck-sheet.png, built by
@@ -10,7 +11,6 @@ import Phaser from 'phaser';
  */
 export const DUCK_SHEET = {
   key: 'duck',
-  url: 'assets/duck-sheet.webp',
   frameSize: 256,
   frameCount: 6,
   /** World units per sheet pixel (≈112 units wide on screen). */
@@ -31,25 +31,38 @@ const ANIMS: Record<DuckAnim, { frames: number[]; fps: number; repeat: number }>
   hurt: { frames: [2, 4], fps: 16, repeat: -1 },
 };
 
-export function animKey(anim: DuckAnim): string {
-  return `${DUCK_SHEET.key}-${anim}`;
+export type SkinId = (typeof CONFIG.skins)[number]['id'];
+
+/**
+ * Texture key of a skin's sheet (CONFIG.skins). Every skin uses the same layout, pivot and scale
+ * as the classic sheet, which keeps its original key.
+ */
+export function skinTexture(skin: SkinId): string {
+  return skin === 'classic' ? DUCK_SHEET.key : `${DUCK_SHEET.key}-${skin}`;
 }
 
-export function loadDuckSheet(scene: Phaser.Scene): void {
-  scene.load.spritesheet(DUCK_SHEET.key, `${import.meta.env.BASE_URL}${DUCK_SHEET.url}`, {
+export function animKey(anim: DuckAnim, texture: string = DUCK_SHEET.key): string {
+  return `${texture}-${anim}`;
+}
+
+/** Queues a skin's sheet on the scene's loader (call `scene.load.start()` outside preload). */
+export function loadDuckSheet(scene: Phaser.Scene, skin: SkinId = 'classic'): void {
+  const file = CONFIG.skins.find((s) => s.id === skin)?.file ?? 'duck-sheet.webp';
+  scene.load.spritesheet(skinTexture(skin), `${import.meta.env.BASE_URL}assets/${file}`, {
     frameWidth: DUCK_SHEET.frameSize,
     frameHeight: DUCK_SHEET.frameSize,
     endFrame: DUCK_SHEET.frameCount - 1,
   });
 }
 
-export function createDuckAnims(scene: Phaser.Scene): void {
+/** Creates the animations for a loaded skin sheet (once per texture). */
+export function createDuckAnims(scene: Phaser.Scene, texture: string = DUCK_SHEET.key): void {
   for (const [name, a] of Object.entries(ANIMS)) {
-    const key = animKey(name as DuckAnim);
+    const key = animKey(name as DuckAnim, texture);
     if (scene.anims.exists(key)) continue;
     scene.anims.create({
       key,
-      frames: scene.anims.generateFrameNumbers(DUCK_SHEET.key, { frames: a.frames }),
+      frames: scene.anims.generateFrameNumbers(texture, { frames: a.frames }),
       frameRate: a.fps,
       repeat: a.repeat,
     });

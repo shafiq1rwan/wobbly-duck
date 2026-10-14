@@ -423,6 +423,37 @@ button {
   height: 1.4em;
 }
 
+/* The bank pill on the menu doubles as the skins-shop button. */
+.bank-btn {
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(19, 38, 106, 0.45);
+}
+
+.bank-sep {
+  width: 2px;
+  height: 1.1em;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 1px;
+}
+
+/* A skin the player can afford: small orange dot on the shop button. */
+.shop-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border: 2px solid var(--white);
+  border-radius: 50%;
+}
+
+.shop-dot[hidden] {
+  display: none;
+}
+
 /* New best: orange label and a little crown bounce. */
 .best-badge.is-new .best-label {
   color: var(--accent);
@@ -669,6 +700,158 @@ button {
   50% {
     transform: scale(1.2);
   }
+}
+
+/* ---------------------------------------------------------------- skins shop */
+
+/* Beside the duck (right of it in landscape, above it in portrait) so the try-on stays visible. */
+.shop-screen {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: calc(var(--safe-right) + clamp(16px, 5vw, 80px));
+  background: rgba(23, 62, 110, 0.25);
+}
+
+.modal-shop {
+  width: min(clamp(270px, 46vw, 470px), 100%);
+}
+
+.shop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shop-title {
+  font-size: clamp(26px, 7vmin, 44px);
+}
+
+.shop-grid {
+  display: grid;
+  /* As many columns as fit (4 on desktop/landscape, 3 on a portrait phone); more skins add rows. */
+  grid-template-columns: repeat(auto-fill, minmax(clamp(74px, 20vmin, 92px), 1fr));
+  gap: clamp(6px, 1.8vmin, 10px);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.skin-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px 4px 6px;
+  background: var(--card);
+  border: 3px solid transparent;
+  border-radius: clamp(10px, 3vmin, 14px);
+  box-shadow: 0 3px 0 rgba(19, 38, 106, 0.3);
+  color: var(--ink);
+}
+
+.skin-card.selected {
+  border-color: var(--yellow);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 3px 0 rgba(19, 38, 106, 0.3);
+}
+
+/* Frame 0 of the skin's sheet (8 cells in a row). */
+.skin-img {
+  width: 100%;
+  aspect-ratio: 1;
+  background-size: 800% 100%;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+}
+
+.skin-card.locked .skin-img {
+  filter: saturate(0.5) brightness(0.8);
+}
+
+.skin-name {
+  font-size: clamp(12px, 3.2vmin, 15px);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.skin-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: clamp(11px, 3vmin, 14px);
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.skin-price .icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.skin-card.equipped .skin-price {
+  color: #1f8a4c;
+}
+
+/* Not enough score yet: greyed-out action button (still pressable, it shakes). */
+.btn.btn-locked {
+  background: linear-gradient(#d5dde8, #b9c5d6);
+}
+
+.btn.shake {
+  animation: chip-shake 400ms ease-out;
+}
+
+@media (max-aspect-ratio: 4/5) {
+  .shop-screen {
+    align-items: flex-start;
+    justify-content: center;
+    padding-right: inherit;
+    padding-top: calc(var(--safe-top) + 24px);
+  }
+  .modal-shop {
+    width: min(var(--modal-w), 100%);
+  }
+}
+
+/* ---------------------------------------------------------------- revive */
+
+.revive-timer {
+  height: 10px;
+  background: rgba(19, 38, 106, 0.45);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.revive-bar {
+  width: 100%;
+  height: 100%;
+  background: var(--yellow);
+  border-radius: 5px;
+  transform-origin: left center;
+}
+
+.revive-note {
+  margin: -4px 0 0;
+  font-size: clamp(13px, 3.4vmin, 15px);
+  font-weight: 500;
+  color: var(--white);
+  opacity: 0.85;
+}
+
+.text-btn {
+  align-self: center;
+  padding: 4px 10px;
+  background: none;
+  font-size: clamp(15px, 4vmin, 18px);
+  font-weight: 600;
+  color: var(--white);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.85;
 }
 
 /* ---------------------------------------------------------------- stats */

@@ -3,10 +3,15 @@
  * which suits the cartoon style. Only the icons imported here are bundled. They are injected once as
  * an SVG sprite; markup uses them with <svg class="icon"><use href="#i-name" /></svg>.
  */
+import back from '@phosphor-icons/core/fill/arrow-left-fill.svg?raw';
 import replay from '@phosphor-icons/core/fill/arrow-clockwise-fill.svg?raw';
+import check from '@phosphor-icons/core/fill/check-circle-fill.svg?raw';
+import skins from '@phosphor-icons/core/fill/coat-hanger-fill.svg?raw';
 import crown from '@phosphor-icons/core/fill/crown-fill.svg?raw';
 import flag from '@phosphor-icons/core/fill/flag-fill.svg?raw';
 import home from '@phosphor-icons/core/fill/house-fill.svg?raw';
+import lock from '@phosphor-icons/core/fill/lock-simple-fill.svg?raw';
+import ad from '@phosphor-icons/core/fill/monitor-play-fill.svg?raw';
 import pause from '@phosphor-icons/core/fill/pause-fill.svg?raw';
 import play from '@phosphor-icons/core/fill/play-fill.svg?raw';
 import soundOn from '@phosphor-icons/core/fill/speaker-high-fill.svg?raw';
@@ -14,6 +19,11 @@ import soundOff from '@phosphor-icons/core/fill/speaker-slash-fill.svg?raw';
 import star from '@phosphor-icons/core/fill/star-fill.svg?raw';
 
 const ICONS: Record<string, string> = {
+  ad,
+  back,
+  check,
+  lock,
+  skins,
   replay,
   crown,
   flag,

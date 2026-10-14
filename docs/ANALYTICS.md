@@ -87,7 +87,9 @@ first run is too hard, too long or not fun.
 | `measure('gameover', 'play-again', 'interact')` / `measure('gameover', 'home', 'interact')` (with `visible` on the screen) | Restart vs leave |
 | `measure('menu', 'sound-toggle', 'interact')` | How many mute (sound too loud or annoying?) |
 | `measure('menu', 'pause', 'interact')` | Pausing a lot can mean the game is too fast |
-| Later: `('shop', 'skins', 'visible' / 'interact')`, `('revive', 'offer', 'visible' / 'interact')` | Skins and revive features |
+| `measure('shop', 'skins', 'visible')`, `measure('shop', '<skin id>', 'unlock')` | Do players open the shop, and which skins do they save up for? |
+| `measure('revive', 'offer', 'visible')` → `('revive', 'ad', 'interact')` / `('revive', 'offer', 'skip')` | How often the revive is taken (rewarded-ad uptake) |
+| `measure('best', 'flag', 'passed')` | How often players beat their best distance |
 
 ### 6. Returning players (rough, on-device)
 

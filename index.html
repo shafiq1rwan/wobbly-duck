@@ -14,8 +14,8 @@
     <link rel="preload" as="image" href="./assets/bg-palms.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/bg-rocks.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/bg-clouds.webp" type="image/webp" />
-    <link rel="preload" as="image" href="./assets/obstacle-log-v2.webp" type="image/webp" />
-    <link rel="preload" as="image" href="./assets/obstacle-box-v2.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/obstacle-log-v3.webp" type="image/webp" />
+    <link rel="preload" as="image" href="./assets/obstacle-box-v3.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/obstacle-rock-v2.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/lily-pads.webp" type="image/webp" />
     <link rel="preload" as="image" href="./assets/frog-hop.webp" type="image/webp" />
@@ -77,15 +77,51 @@
               <span class="best-value"><span id="menu-best">0</span></span>
             </div>
           </div>
-          <!-- Score bank: every run's score added up; will unlock duck skins. -->
-          <div class="bank" aria-label="Total score">
+          <!-- Score bank (every run's score added up) — opens the skins shop, where it is spent. -->
+          <button id="btn-shop" class="bank bank-btn" aria-label="Skins shop">
             <svg class="icon bank-icon"><use href="#i-star" /></svg><span id="menu-bank">0</span>
-          </div>
+            <span class="bank-sep" aria-hidden="true"></span>
+            <svg class="icon bank-icon"><use href="#i-skins" /></svg><span>Skins</span>
+            <span id="shop-dot" class="shop-dot" hidden></span>
+          </button>
         </div>
         <p id="menu-hint" class="hint">
           <span class="hint-desktop">Space / W / ↑ to jump &nbsp;·&nbsp; D / → to dash</span>
           <span class="hint-touch">Tap left to jump &nbsp;·&nbsp; Tap right to dash</span>
         </p>
+      </div>
+
+      <!-- Skins shop (over the live menu scene, beside the duck so a skin can be tried on) -->
+      <div id="shop" class="screen shop-screen" hidden>
+        <div class="modal modal-shop">
+          <div class="shop-head">
+            <h2 class="title shop-title">Skins</h2>
+            <div class="bank"><svg class="icon bank-icon"><use href="#i-star" /></svg><span id="shop-bank">0</span></div>
+          </div>
+          <div id="shop-grid" class="shop-grid"></div>
+          <div class="btn-row">
+            <button id="btn-shop-back" class="btn btn-secondary" aria-label="Back">
+              <svg class="icon"><use href="#i-back" /></svg>
+            </button>
+            <button id="btn-shop-action" class="btn btn-primary btn-wide">
+              <svg class="icon"><use id="shop-action-icon" href="#i-play" /></svg><span id="shop-action-text">Play</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revive offer after a crash (once per run, rewarded ad) -->
+      <div id="revive" class="screen panel-screen dim" hidden>
+        <div class="modal">
+          <h2 class="title">Keep going?</h2>
+          <div class="go-score" id="revive-score">0</div>
+          <div class="revive-timer" aria-hidden="true"><div id="revive-bar" class="revive-bar"></div></div>
+          <button id="btn-revive" class="btn btn-primary">
+            <svg class="icon"><use href="#i-ad" /></svg><span id="revive-text">Revive</span>
+          </button>
+          <p class="revive-note">Watch a short ad to continue this run</p>
+          <button id="btn-revive-skip" class="text-btn">No thanks</button>
+        </div>
       </div>
 
       <!-- Pause -->

@@ -93,6 +93,15 @@ export class ObstacleManager {
     this.deactivate(o);
   }
 
+  /** Removes every obstacle left of `maxX` (revive clears the river ahead); reports each one. */
+  clearBefore(maxX: number, fn: (x: number, y: number) => void): void {
+    for (const o of this.pool) {
+      if (!o.active || o.x > maxX) continue;
+      fn(o.x, o.y);
+      this.deactivate(o);
+    }
+  }
+
   forEachActive(fn: (box: Box) => void): void {
     for (const o of this.pool) if (o.active) fn(o.box);
   }

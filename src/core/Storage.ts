@@ -28,9 +28,21 @@ export function loadNumber(key: string, fallback = 0): number {
 }
 
 export function saveNumber(key: string, value: number): void {
-  memory.set(key, String(value));
+  saveString(key, String(value));
+}
+
+export function loadString(key: string, fallback = ''): string {
   try {
-    store?.setItem(PREFIX + key, String(value));
+    return (store ? store.getItem(PREFIX + key) : memory.get(key)) ?? memory.get(key) ?? fallback;
+  } catch {
+    return memory.get(key) ?? fallback;
+  }
+}
+
+export function saveString(key: string, value: string): void {
+  memory.set(key, value);
+  try {
+    store?.setItem(PREFIX + key, value);
   } catch {
     /* quota or access error — keep the in-memory copy */
   }

@@ -49,7 +49,7 @@ src/art/duckSprite.ts    Duck sheet layout: frame size, pivot, scale, animations
 src/game/                Duck (controller), DuckView (visuals + squash/stretch), Spring, Water (waves +
                          ripples), Splashes (droplets, speed lines), CameraShake, DashMeter,
                          ObstacleManager (log/crate/rock), FoodManager, LilyPads (bounce pads + frogs),
-                         Parade (ducklings),
+                         Parade (ducklings), BestMarker (best-distance flag), Skins (owned/worn skins),
                          ScorePopups, Patterns (handcrafted
                          patterns + Spawner, difficulty tiers), Background
 src/scenes/              BootScene (loading), GameScene (state machine + loop)
@@ -95,6 +95,10 @@ Specs, sizes, pivots and file names are in [docs/ASSET_SPEC.md](docs/ASSET_SPEC.
   `python tools/optimize-images.py` — it writes WebPs to `public/assets/`. Never copy raw PNGs into
   `public/`. Load files in `BootScene.preload` with `` `${import.meta.env.BASE_URL}assets/<file>` ``
   and add a matching `<link rel="preload" as="image">` in `index.html`.
+- **Duck skins** (shop) are sheets with the same layout as `duck-sheet.png` (2048×256, eight 256 cells,
+  six poses, same eye alignment). To add one: a MANIFEST entry in `tools/optimize-images.py`
+  (→ `public/assets/duck-<id>.webp`) and an entry in `CONFIG.skins` (id, name, file, price). Skins load
+  on demand, so they don't need an `index.html` preload.
 - Use transparent PNGs with real alpha. A strip on a white background can be converted with
   `python tools/process-duck-strip.py <strip.png> <out_dir>`.
 - **Never put notes or docs in `public/`** — Vite copies the whole folder into the build.

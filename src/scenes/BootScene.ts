@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { createDuckAnims, loadDuckSheet } from '../art/duckSprite';
+import { createDuckAnims, loadDuckSheet, skinTexture } from '../art/duckSprite';
 import { CONFIG } from '../config';
+import { Skins } from '../game/Skins';
 
 /** Loads all artwork (pre-optimised WebPs listed in config). */
 export class BootScene extends Phaser.Scene {
@@ -9,7 +10,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    loadDuckSheet(this);
+    loadDuckSheet(this); // classic: the fallback and every view's first texture
+    // The worn skin loads up front so the duck appears dressed; other skins load when picked.
+    const worn = new Skins().equipped;
+    if (worn !== 'classic') loadDuckSheet(this, worn);
     const base = `${import.meta.env.BASE_URL}assets/`;
     const images = [...CONFIG.background.layers, ...Object.values(CONFIG.obstacles.types), ...Object.values(CONFIG.food.kinds)];
     const pads = CONFIG.lilyPads;
@@ -26,6 +30,8 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     createDuckAnims(this);
+    const worn = new Skins().equipped;
+    if (worn !== 'classic') createDuckAnims(this, skinTexture(worn));
     this.scene.start('Game');
   }
 }

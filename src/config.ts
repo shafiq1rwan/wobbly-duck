@@ -265,28 +265,29 @@ export const CONFIG = {
     types: {
       log: {
         key: 'obstacle-log',
-        file: 'obstacle-log-v2.webp',
-        scale: 0.578, // ≈175×36 units — about 1.8× the duck's width
+        file: 'obstacle-log-v3.webp',
+        scale: 0.645, // ≈160×57 units (the art's body is 248×89 px) — chubby, about 40% above water
         originX: 0.5,
         originY: 0.5,
-        floatOffset: 4,
-        top: 14, // visual top above the water line
+        floatOffset: 10,
+        top: 19, // visual top above the water line
         waveFollow: 1,
         tilt: 1,
-        hit: { halfW: 77, halfH: 13, offsetY: 0 },
+        // Top edge ≈10 above the water line, the same as the old thin log, so jump timing is unchanged.
+        hit: { halfW: 70, halfH: 20, offsetY: 0 },
         breakable: false,
       },
       crate: {
         key: 'obstacle-crate',
-        file: 'obstacle-box-v2.webp',
-        scale: 0.68, // ≈120×108 units (a bit bigger than the duck), about a third under water
+        file: 'obstacle-box-v3.webp',
+        scale: 0.722, // flat square face ≈104×104 units (144 px in the art), about a third under water
         originX: 0.5,
         originY: 0.5,
         floatOffset: -18,
-        top: 72,
+        top: 70,
         waveFollow: 1,
         tilt: 0.5,
-        hit: { halfW: 54, halfH: 47, offsetY: 0 },
+        hit: { halfW: 47, halfH: 47, offsetY: 0 }, // top ≈65 above water, as before
         breakable: true,
       },
       rock: {
@@ -453,6 +454,38 @@ export const CONFIG = {
     afterPadGap: 1.7,
     /** Corn trail filling open water (Cookie Run style), kept clear of obstacles and ducklings. */
     trail: { step: 0.13, clearance: 0.3, peasChance: 0.08 },
+  },
+
+  /**
+   * Duck skins, bought with the score bank (every run's score added up). Each file is a duck sheet
+   * with the same layout as duck-sheet.webp (see src/art/duckSprite.ts). The first skin is free.
+   * Order here is the shop order. A typical 30–60 s run scores ~15k–35k.
+   */
+  skins: [
+    { id: 'classic', name: 'Classic', file: 'duck-sheet.webp', price: 0 },
+    { id: 'pekin', name: 'Pekin', file: 'duck-pekin.webp', price: 15_000 },
+    { id: 'khaki', name: 'Khaki', file: 'duck-khaki.webp', price: 40_000 },
+    { id: 'mallard', name: 'Mallard', file: 'duck-mallard.webp', price: 100_000 },
+  ],
+
+  /** "Beat your best" flag on the river at the best distance so far. */
+  bestMarker: {
+    /** Only once the best is at least this far (a 10 m flag is no goal). */
+    minMetres: 40,
+    /** Flag pole height above the water line, and how far the pole sinks below it. */
+    poleHeight: 250,
+    poleSink: 30,
+  },
+
+  /** One watch-an-ad revive per run, offered after a crash. */
+  revive: {
+    /** Only offered once the run is worth saving. */
+    minMetres: 60,
+    /** How long the offer stays up before it becomes game over. */
+    offerSeconds: 6,
+    /** After reviving: obstacles are ignored this long, and the river ahead is cleared. */
+    graceSeconds: 2,
+    clearAhead: 900,
   },
 
   gameOverDelay: 0.75,

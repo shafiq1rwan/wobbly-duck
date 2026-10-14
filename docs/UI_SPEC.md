@@ -85,6 +85,21 @@ obstacles. There is no dim overlay.
 Logo: "WOBBLY" in white over "DUCK" in yellow, heavy navy outline, slight arch and tilt, water
 splash droplets either side. It is an image asset (`logo.png`), not CSS text.
 
+### Skins shop
+
+Opened from the menu's bank pill (`★ 50,000 | Skins`; an orange dot shows when a new skin is
+affordable). The shop is a card beside the duck — right of it in landscape, above it in portrait —
+over a light dim, so the duck stays visible: tapping a skin shows it on the swimming duck (try-on).
+
+| Element | Content |
+| --- | --- |
+| Header | "Skins" title, bank pill on the right |
+| Grid | One card per `CONFIG.skins` entry: frame 0 of its sheet, name, then `★ price`, `Owned` or `✓ Wearing`. As many columns as fit (4 desktop / landscape, 3 portrait); more skins add rows and the grid scrolls |
+| Buttons | Back (secondary, arrow) + main button: `Play` (owned skin selected), `★ Unlock 15,000` (locked, affordable) or greyed `🔒 Need 3,200 more` (shakes when pressed) |
+
+Tapping an owned skin wears it at once. Unlocking spends the bank and wears the skin. Back or Esc
+returns to the menu wearing the last owned skin picked.
+
 ### Gameplay HUD
 
 | Element | Position | Content |
@@ -97,6 +112,19 @@ splash droplets either side. It is an image asset (`logo.png`), not CSS text.
 - On food pickup the food chip pops: scale 1 → 1.2 → 1 over 180 ms.
 - Distance updates once per whole metre (already the case).
 - Mobile: chips at 85% size.
+
+**Best-distance flag** (in the world, not the HUD): a yellow pennant on a pole, `BEST 742 m`, planted
+in the river at the best distance once it is at least `CONFIG.bestMarker.minMetres`. Swimming past it
+shows the toast "New best distance!" with a fanfare.
+
+### Revive offer
+
+After a crash, once per run and only past `CONFIG.revive.minMetres`: a dimmed card with "Keep going?",
+the run's score, a draining timer bar (`CONFIG.revive.offerSeconds`), a primary `▶ Revive` button with
+"Watch a short ad to continue this run", and a "No thanks" text button. Enter = Revive, Esc = No
+thanks; when the bar empties it becomes Game Over. The ad goes through `platform.rewardedBreak()`;
+on success the duck is back in the water where it crashed, the river ahead is cleared and it blinks
+through obstacles for `CONFIG.revive.graceSeconds`.
 
 ### Pause (not in the reference — derived)
 

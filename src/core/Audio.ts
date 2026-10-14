@@ -1,6 +1,6 @@
 import { CONFIG } from '../config';
 
-export type Sfx = 'jump' | 'dash' | 'splashSmall' | 'splashBig' | 'hit' | 'click' | 'pickup' | 'bonus' | 'crate' | 'peep' | 'peepSad' | 'doubleJump' | 'boing' | 'ribbit';
+export type Sfx = 'jump' | 'dash' | 'splashSmall' | 'splashBig' | 'hit' | 'click' | 'pickup' | 'bonus' | 'crate' | 'peep' | 'peepSad' | 'doubleJump' | 'boing' | 'ribbit' | 'fanfare' | 'revive' | 'unlock';
 
 /** Ignore repeats of the same effect closer together than this (s). */
 const MIN_REPEAT = 0.04;
@@ -16,6 +16,7 @@ export class AudioManager {
   private noise: AudioBuffer | null = null;
   private readonly lastPlayed = new Map<Sfx, number>();
   private hidden = false;
+  private adPlaying = false;
 
   constructor(private muted: boolean) {
     const unlock = () => {
@@ -41,14 +42,28 @@ export class AudioManager {
   /** Silence everything while the tab is hidden. */
   setHidden(hidden: boolean): void {
     this.hidden = hidden;
+    this.applySuspend();
+  }
+
+  /** Silence everything while an ad plays (portal requirement). */
+  setAdPlaying(playing: boolean): void {
+    this.adPlaying = playing;
+    this.applySuspend();
+  }
+
+  private get silenced(): boolean {
+    return this.hidden || this.adPlaying;
+  }
+
+  private applySuspend(): void {
     if (!this.ctx) return;
-    if (hidden) void this.ctx.suspend();
+    if (this.silenced) void this.ctx.suspend();
     else void this.ctx.resume();
   }
 
   play(name: Sfx): void {
     const ctx = this.ctx;
-    if (!ctx || this.muted || this.hidden || ctx.state !== 'running') return;
+    if (!ctx || this.muted || this.silenced || ctx.state !== 'running') return;
     const now = ctx.currentTime;
     if (now - (this.lastPlayed.get(name) ?? -1) < MIN_REPEAT) return;
     this.lastPlayed.set(name, now);
@@ -96,6 +111,24 @@ export class AudioManager {
         this.tone('sine', 1600, 1000, 0.12, 0.13);
         this.tone('sine', 1300, 750, 0.16, 0.11, 0.14);
         break;
+      case 'fanfare':
+        // Beat-your-best flag: a bright rising arpeggio.
+        this.tone('triangle', 523, 523, 0.12, 0.16);
+        this.tone('triangle', 659, 659, 0.12, 0.16, 0.09);
+        this.tone('triangle', 784, 784, 0.12, 0.16, 0.18);
+        this.tone('sine', 1047, 1047, 0.3, 0.14, 0.27);
+        break;
+      case 'revive':
+        // Back in the water: a long upward sweep with a sparkle on top.
+        this.tone('sine', 260, 1040, 0.45, 0.2);
+        this.tone('triangle', 780, 1560, 0.2, 0.06, 0.25);
+        break;
+      case 'unlock':
+        // New skin bought.
+        this.tone('sine', 660, 990, 0.1, 0.16);
+        this.tone('sine', 990, 1320, 0.18, 0.14, 0.08);
+        this.noiseBurst(0.15, 0.04, 'highpass', 4000, 7000);
+        break;
       case 'doubleJump':
         // Lighter, higher hop with a little air whoosh.
         this.tone('sine', 640, 1250, 0.12, 0.18);
@@ -129,7 +162,7 @@ export class AudioManager {
         this.noise = this.makeNoise(this.ctx);
         this.applyVolume();
       }
-      if (this.ctx.state === 'suspended' && !this.hidden) void this.ctx.resume();
+      if (this.ctx.state === 'suspended' && !this.silenced) void this.ctx.resume();
     } catch {
       this.ctx = null; // audio unavailable — the game stays silent
     }

@@ -1,0 +1,22 @@
+# Revised log and flat crate — v3 PNG assets
+
+Generated 2026-10-14 with the built-in image generation tool. References: active `assets-src/duck-sheet.png` and the previous v2 obstacle PNGs. Rounded cartoon forms and restrained shading match the duck, with the previously requested wood-coloured outlines retained.
+
+## PNG files
+
+- `assets-src/obstacles-duck-style-v3/log.png`: 256×128, centre pivot (128,64). Visible body approximately 248×89 px. Width:height is 2.8:1 compared with about 4.9:1 for the previous log: about 75% thicker at the same displayed width. This changes body thickness, not only outline width.
+- `assets-src/obstacles-duck-style-v3/box.png`: 160×160, centre pivot (80,80). Visible square face 144×144 px. Front-facing X-braced crate with no top/right cube faces.
+- `log-source.png` and `box-source.png`: original high-resolution generator outputs, retained in the same source folder.
+
+Transparent padding was trimmed using alpha >16, faint alpha noise cleared, and sprites packed with premultiplied-alpha resizing. The crate generator produced a face about 8% wider than tall; its face was normalized to an exact square during packing. The log's thick silhouette was preserved proportionally.
+
+PNG only; no WebP exports, optimizer entries, gameplay or collision changes. Earlier assets retained. When integrating, account for padding and check debug hitboxes against the revised silhouette; avoid simply reusing the old skinny log's collision height. Both assets are single static sprites, not animation strips.
+
+## Log prompt
+
+Use case: precise-object-edit. Revise the Wobbly Duck log obstacle into a visibly FATTER, CHUBBIER log. Image1 is the existing too-thin log; image2 is the duck-sheet for strict art-style reference. Preserve the warm orange-brown wood palette and horizontal orientation, but CHANGE THE SILHOUETTE: make the log body about TWICE AS THICK relative to its length. Target visible width-to-height ratio about 2.6:1, instead of the existing skinny approximately5:1. This request is for the thickness of the LOG BODY, not just a thicker stroke. A short chunky horizontal rounded cylinder with large soft rounded ends, the right-hand cut end large and plump. Broad continuous silhouette, easy to read on a small screen. One pale tan cut-end oval on the RIGHT, with ONE simple curved growth ring and small central oval, dark warm brown contours. Only three short broad curved bark marks, no branches. Match the duck's original flat 2D cartoon construction: smooth chunky rounded shapes, confident thick outline at about 3% of visible width, simple base wood brown plus one lower-right brown shade; a small flat warm lighter upper-left patch at most, no glossy highlight, gradient, texture, realistic grain, 3D rendering or drop shadow. Outline dark wood brown #80512F, retaining the user's matching-material-outline direction. SINGLE sprite centred with generous transparent padding, entire object visible, horizontal level not tilted. Real alpha transparency, no water, sky, ground, other objects, text, labels, border, frame or baked checkerboard. Prefer landscape1536x1024 canvas. Clearly thicker than reference.
+
+## Crate prompt
+
+Use case: precise-object-edit. Redraw Wobbly Duck crate as ONE FLAT SQUARE FRONT-VIEW SPRITE. Image1 is old crate with unwanted cube perspective; image2 is duck-sheet for exact cartoon style. Remove the visible TOP and RIGHT SIDE faces completely. No cube perspective or extruded edges. Front-on square outline, width equals height, modestly softened corners, straight horizontal top/bottom and vertical sides, no rotation. Warm golden-tan wood with a thick rounded frame around the square; three broad vertical wooden planks in the centre and a clear chunky wooden X brace across the FRONT. Flat square wooden box/crate pattern, not a dimensional cube. The entire sprite is 2D with only base fill plus ONE simple darker lower-right flat shade, closely matching the duck's simple chubby cartoon art, crisp smooth thick strokes. Dark warm brown #95602E contours and plank separation lines, keeping the user's matching-material-outline preference. No bevel rendering, gradients, realistic grain, tiny nails, gloss or shadows. Minimal readable design. SINGLE object centred on1024x1024 transparent canvas with generous padding on all sides, about75percent width and height. True alpha transparency outside square, no water, ground, backdrop, text, labels, extra crates, borders or checkerboard. Visual style must match existing rounded duck game, not realistic packaging or UI icon.
+
